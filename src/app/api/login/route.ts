@@ -145,10 +145,10 @@ export async function POST(req: NextRequest) {
       // 验证成功，清除失败计数
       loginFailures.delete(ip);
 
-      // 验证成功，设置认证cookie（简易版固定用户名 owner，role 保持 user 以隐藏管理后台）
+      // 验证成功，设置认证cookie（简易版固定用户名，可用 USERNAME 环境变量配置，默认 owner）
       const response = NextResponse.json({ ok: true });
       const cookieValue = await generateAuthCookie(
-        'owner',
+        process.env.USERNAME || 'owner',
         password,
         'user',
         false
