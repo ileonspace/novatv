@@ -179,5 +179,6 @@ echo "direct" | npx wrangler secret put NEXT_PUBLIC_DOUBAN_PROXY_TYPE --name nov
 
 - `ITERATION_LOG.md` — 迭代日志（每次改动记录）
 - `CHANGES_v1.2.9_20260803.md` — v1.2.9 系列改动总结（本次会话全部修改）
+- `COMPLIANCE.md` — 合规与封号风险分析（与 LunaTV 对比、风险、使用原则）
 - `README.md` — 项目使用说明
 - 原版参考：`~/Desktop/Leon项目/LunaTV-main`
