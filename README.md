@@ -18,6 +18,29 @@
 - 💾 **本地缓存**：搜索/详情/分类 IndexedDB 缓存 24h，重复访问秒开
 - 📱 **响应式**：桌面侧边栏 + 移动端底部导航（平板已适配）
 
+## 🛠 技术栈
+
+**前端**
+- **Next.js 14**（App Router）+ React 18 + TypeScript
+- **Tailwind CSS** 样式
+- **ArtPlayer / HLS.js** 播放器
+- **framer-motion** 动效
+- **next-themes** 深色模式
+
+**数据与存储**
+- **localStorage / IndexedDB**：源配置、收藏、播放记录、搜索历史、数据缓存
+- **服务端零存储**：无数据库、无文件落盘
+
+**后端与部署**
+- **Next.js API Routes**：搜索 / 详情 / 豆瓣 / 直播 / 番剧等
+- **@opennextjs/cloudflare**：部署到 Cloudflare Worker
+- **Edge 边缘网络**：全球加速
+
+**搜索与播放**
+- **SSE 流式输出**：多源搜索实时返回
+- **HLS 直连播放**：视频流量不经服务器
+- **代理链 + 自动降级**：豆瓣数据稳定获取
+
 ## 🏗 设计原则
 
 - **一切都在本地**：源配置、收藏、播放记录、搜索历史均存储在**本地浏览器**（localStorage / IndexedDB），不经过服务器
