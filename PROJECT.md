@@ -148,6 +148,7 @@ echo "direct" | npx wrangler secret put NEXT_PUBLIC_DOUBAN_PROXY_TYPE --name nov
 | 变量 | 值 | 说明 |
 |---|---|---|
 | `PASSWORD` | 正式密码（当前 digital）| 站点访问密码，必填 |
+| `USERNAME` | `Leon` | 登录用户名（不设默认 owner）|
 | `NEXT_PUBLIC_SITE_NAME` | `NovaTV` | 站点名 |
 | `NEXT_PUBLIC_STORAGE_TYPE` | `localstorage` | 固定值 |
 | `NEXT_PUBLIC_ENABLE_LIVE` | `true` | 直播功能 |
