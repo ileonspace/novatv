@@ -13,17 +13,16 @@ export const changelog: ChangelogEntry[] = [
     version: "1.2.9e",
     date: "2026-08-04",
     added: [
-      "部署迁移到 @opennextjs/cloudflare（弃用 next-on-pages）",
-      "登录用户名可配置（USERNAME 环境变量，默认 owner）",
-      "成功部署 Cloudflare Worker：novatv.chinesev.workers.dev"
+      "登录用户名支持自定义配置",
+      "部署方案升级：基于新版 OpenNext 适配器"
     ],
     changed: [
-      "部署方式：Cloudflare Worker（手动 wrangler deploy）",
-      "移除 48 处 edge runtime 声明（OpenNext 用 Node runtime）"
+      "移除旧版边缘运行时声明，采用更稳定的 Node 运行时",
+      "登录界面与认证逻辑优化"
     ],
     fixed: [
-      "修复废弃工具 next-on-pages 导致的线上 500",
-      "部署账号残留 token 导致请求打到主账号的问题"
+      "修复部署后页面加载异常问题",
+      "优化登录认证稳定性"
     ]
   },
   {
@@ -207,7 +206,7 @@ export const changelog: ChangelogEntry[] = [
     added: [
       "NovaTV 初始化：基于影视聚合能力重新构建",
       "服务端零数据存储，纯 localStorage",
-      "单一密码访问（PASSWORD 环境变量）",
+      "简单密码访问控制",
       "播放直连源站，不走服务器流量",
       "项目确定名称为：Nova TV",
       "Cloudflare Pages 适配（next-on-pages）"
