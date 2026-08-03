@@ -33,11 +33,16 @@
 
 > 所有内容相关配置均由使用者自行导入并存储于本地浏览器，项目本身不包含任何内容。
 
-## 📖 文档
-
-- `PROJECT.md` — 项目说明与架构
-- `ITERATION_LOG.md` — 迭代日志
-
 ## ⚖️ 合规
 
 仅供个人学习使用，请遵守当地法律法规。
+
+## 📄 协议与致谢
+
+本项目**衍生自 [MoonTechLab/LunaTV](https://github.com/MoonTechLab/LunaTV)**，遵循 **CC BY-NC-SA** 协议：
+
+- **BY（署名）**：使用或衍生本项目，必须保留原项目 [LunaTV](https://github.com/MoonTechLab/LunaTV) 出处
+- **NC（非商业）**：禁止任何商业化行为
+- **SA（相同方式共享）**：任何衍生项目必须以相同协议（CC BY-NC-SA）开源
+
+感谢原项目 [MoonTechLab](https://github.com/MoonTechLab) 的开源贡献。
