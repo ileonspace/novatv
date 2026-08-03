@@ -1,0 +1,327 @@
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-empty-function */
+
+import { AdminConfig } from './admin.types';
+import { Favorite, IStorage, PlayRecord, SkipConfig } from './types';
+
+// NovaTV 无数据库：服务端零存储，前端数据走 localStorage（见 db.client.ts）
+// 此空实现仅保证服务端 API 调用不报错，返回安全默认值
+const STORAGE_TYPE = 'localstorage' as const;
+
+/**
+ * 本地内存空实现（无数据库）。
+ * NovaTV 简易版不存储任何服务端数据，所有方法返回安全默认值。
+ */
+class LocalMemoryStorage implements IStorage {
+  // 播放记录
+  async getPlayRecord(_userName: string, _key: string): Promise<PlayRecord | null> {
+    return null;
+  }
+  async setPlayRecord(_userName: string, _key: string, _record: PlayRecord): Promise<void> {}
+  async getAllPlayRecords(_userName: string): Promise<{ [key: string]: PlayRecord }> {
+    return {};
+  }
+  async deletePlayRecord(_userName: string, _key: string): Promise<void> {}
+  async deleteAllPlayRecords(_userName: string): Promise<void> {}
+
+  // 收藏
+  async getFavorite(_userName: string, _key: string): Promise<Favorite | null> {
+    return null;
+  }
+  async setFavorite(_userName: string, _key: string, _favorite: Favorite): Promise<void> {}
+  async getAllFavorites(_userName: string): Promise<{ [key: string]: Favorite }> {
+    return {};
+  }
+  async deleteFavorite(_userName: string, _key: string): Promise<void> {}
+  async deleteAllFavorites(_userName: string): Promise<void> {}
+
+  // 用户
+  async registerUser(_userName: string, _password: string): Promise<void> {}
+  async verifyUser(_userName: string, _password: string): Promise<boolean> {
+    return false;
+  }
+  async checkUserExist(_userName: string): Promise<boolean> {
+    return false;
+  }
+  async changePassword(_userName: string, _newPassword: string): Promise<void> {}
+  async deleteUser(_userName: string): Promise<void> {}
+
+  // 搜索历史
+  async getSearchHistory(_userName: string): Promise<string[]> {
+    return [];
+  }
+  async addSearchHistory(_userName: string, _keyword: string): Promise<void> {}
+  async deleteSearchHistory(_userName: string, _keyword?: string): Promise<void> {}
+
+  // 用户列表
+  async getAllUsers(): Promise<string[]> {
+    return [];
+  }
+
+  // 管理员配置（NovaTV 配置静态化，服务端无配置存储）
+  async getAdminConfig(): Promise<AdminConfig | null> {
+    return null;
+  }
+  async setAdminConfig(_config: AdminConfig): Promise<void> {}
+
+  // 跳过片头片尾
+  async getSkipConfig(_userName: string, _source: string, _id: string): Promise<SkipConfig | null> {
+    return null;
+  }
+  async setSkipConfig(_userName: string, _source: string, _id: string, _config: SkipConfig): Promise<void> {}
+  async deleteSkipConfig(_userName: string, _source: string, _id: string): Promise<void> {}
+  async getAllSkipConfigs(_userName: string): Promise<{ [key: string]: SkipConfig }> {
+    return {};
+  }
+
+  // 数据清理
+  async clearAllData(): Promise<void> {}
+}
+
+// 创建存储实例（简易版统一使用本地空实现）
+function createStorage(): IStorage {
+  return new LocalMemoryStorage();
+}
+
+// 单例存储实例
+let storageInstance: IStorage | null = null;
+
+function getStorage(): IStorage {
+  if (!storageInstance) {
+    storageInstance = createStorage();
+  }
+  return storageInstance;
+}
+
+// 工具函数：生成存储key
+export function generateStorageKey(source: string, id: string): string {
+  return `${source}+${id}`;
+}
+
+// 导出便捷方法
+export class DbManager {
+  private storage: IStorage;
+  private migrationPromise: Promise<void> | null = null;
+
+  constructor() {
+    this.storage = getStorage();
+    // 启动时自动触发数据迁移（异步，不阻塞构造）
+    if (this.storage && typeof this.storage.migrateData === 'function') {
+      this.migrationPromise = this.storage.migrateData().then(async () => {
+        // 数据结构迁移完成后，执行密码哈希迁移
+        if (typeof this.storage.migratePasswords === 'function') {
+          await this.storage.migratePasswords();
+        }
+      }).catch((err) => {
+        console.error('数据迁移异常:', err);
+      });
+    }
+  }
+
+  /** 等待迁移完成（内部方法，首次调用后 migrationPromise 会被置空） */
+  private async ensureMigrated(): Promise<void> {
+    if (this.migrationPromise) {
+      await this.migrationPromise;
+      this.migrationPromise = null;
+    }
+  }
+
+  // 播放记录相关方法
+  async getPlayRecord(
+    userName: string,
+    source: string,
+    id: string
+  ): Promise<PlayRecord | null> {
+    const key = generateStorageKey(source, id);
+    return this.storage.getPlayRecord(userName, key);
+  }
+
+  async savePlayRecord(
+    userName: string,
+    source: string,
+    id: string,
+    record: PlayRecord
+  ): Promise<void> {
+    const key = generateStorageKey(source, id);
+    await this.storage.setPlayRecord(userName, key, record);
+  }
+
+  async getAllPlayRecords(userName: string): Promise<{
+    [key: string]: PlayRecord;
+  }> {
+    await this.ensureMigrated();
+    return this.storage.getAllPlayRecords(userName);
+  }
+
+  async deletePlayRecord(
+    userName: string,
+    source: string,
+    id: string
+  ): Promise<void> {
+    const key = generateStorageKey(source, id);
+    await this.storage.deletePlayRecord(userName, key);
+  }
+
+  async deleteAllPlayRecords(userName: string): Promise<void> {
+    await this.storage.deleteAllPlayRecords(userName);
+  }
+
+  // 收藏相关方法
+  async getFavorite(
+    userName: string,
+    source: string,
+    id: string
+  ): Promise<Favorite | null> {
+    const key = generateStorageKey(source, id);
+    return this.storage.getFavorite(userName, key);
+  }
+
+  async saveFavorite(
+    userName: string,
+    source: string,
+    id: string,
+    favorite: Favorite
+  ): Promise<void> {
+    const key = generateStorageKey(source, id);
+    await this.storage.setFavorite(userName, key, favorite);
+  }
+
+  async getAllFavorites(
+    userName: string
+  ): Promise<{ [key: string]: Favorite }> {
+    await this.ensureMigrated();
+    return this.storage.getAllFavorites(userName);
+  }
+
+  async deleteFavorite(
+    userName: string,
+    source: string,
+    id: string
+  ): Promise<void> {
+    const key = generateStorageKey(source, id);
+    await this.storage.deleteFavorite(userName, key);
+  }
+
+  async deleteAllFavorites(userName: string): Promise<void> {
+    await this.storage.deleteAllFavorites(userName);
+  }
+
+  async isFavorited(
+    userName: string,
+    source: string,
+    id: string
+  ): Promise<boolean> {
+    const favorite = await this.getFavorite(userName, source, id);
+    return favorite !== null;
+  }
+
+  // ---------- 用户相关 ----------
+  async registerUser(userName: string, password: string): Promise<void> {
+    await this.storage.registerUser(userName, password);
+  }
+
+  async verifyUser(userName: string, password: string): Promise<boolean> {
+    return this.storage.verifyUser(userName, password);
+  }
+
+  // 检查用户是否已存在
+  async checkUserExist(userName: string): Promise<boolean> {
+    return this.storage.checkUserExist(userName);
+  }
+
+  async changePassword(userName: string, newPassword: string): Promise<void> {
+    await this.storage.changePassword(userName, newPassword);
+  }
+
+  async deleteUser(userName: string): Promise<void> {
+    await this.storage.deleteUser(userName);
+  }
+
+  // ---------- 搜索历史 ----------
+  async getSearchHistory(userName: string): Promise<string[]> {
+    return this.storage.getSearchHistory(userName);
+  }
+
+  async addSearchHistory(userName: string, keyword: string): Promise<void> {
+    await this.storage.addSearchHistory(userName, keyword);
+  }
+
+  async deleteSearchHistory(userName: string, keyword?: string): Promise<void> {
+    await this.storage.deleteSearchHistory(userName, keyword);
+  }
+
+  // 获取全部用户名
+  async getAllUsers(): Promise<string[]> {
+    if (typeof (this.storage as any).getAllUsers === 'function') {
+      return (this.storage as any).getAllUsers();
+    }
+    return [];
+  }
+
+  // ---------- 管理员配置 ----------
+  async getAdminConfig(): Promise<AdminConfig | null> {
+    if (typeof (this.storage as any).getAdminConfig === 'function') {
+      return (this.storage as any).getAdminConfig();
+    }
+    return null;
+  }
+
+  async saveAdminConfig(config: AdminConfig): Promise<void> {
+    if (typeof (this.storage as any).setAdminConfig === 'function') {
+      await (this.storage as any).setAdminConfig(config);
+    }
+  }
+
+  // ---------- 跳过片头片尾配置 ----------
+  async getSkipConfig(
+    userName: string,
+    source: string,
+    id: string
+  ): Promise<SkipConfig | null> {
+    if (typeof (this.storage as any).getSkipConfig === 'function') {
+      return (this.storage as any).getSkipConfig(userName, source, id);
+    }
+    return null;
+  }
+
+  async setSkipConfig(
+    userName: string,
+    source: string,
+    id: string,
+    config: SkipConfig
+  ): Promise<void> {
+    if (typeof (this.storage as any).setSkipConfig === 'function') {
+      await (this.storage as any).setSkipConfig(userName, source, id, config);
+    }
+  }
+
+  async deleteSkipConfig(
+    userName: string,
+    source: string,
+    id: string
+  ): Promise<void> {
+    if (typeof (this.storage as any).deleteSkipConfig === 'function') {
+      await (this.storage as any).deleteSkipConfig(userName, source, id);
+    }
+  }
+
+  async getAllSkipConfigs(
+    userName: string
+  ): Promise<{ [key: string]: SkipConfig }> {
+    if (typeof (this.storage as any).getAllSkipConfigs === 'function') {
+      return (this.storage as any).getAllSkipConfigs(userName);
+    }
+    return {};
+  }
+
+  // ---------- 数据清理 ----------
+  async clearAllData(): Promise<void> {
+    if (typeof (this.storage as any).clearAllData === 'function') {
+      await (this.storage as any).clearAllData();
+    } else {
+      throw new Error('存储类型不支持清空数据操作');
+    }
+  }
+}
+
+// 导出默认实例
+export const db = new DbManager();
