@@ -98,14 +98,54 @@ npx @cloudflare/next-on-pages --experimental-minify   # CF Pages 构建
 
 ---
 
-## 五、部署（Cloudflare Pages）
+## 五、部署（Cloudflare Worker）
 
-⚠️ **部署账号约束：绝不用主账号 vipleon@gmail.com**，使用其他 CF 账号。
+⚠️ **部署账号约束：绝不用主账号 vipleon@gmail.com**，使用其他 CF 账号（当前用 chinesev@gmail.com）。
 
-1. `pnpm build` 本地验证通过
-2. `npx @cloudflare/next-on-pages --experimental-minify` 生成 CF Pages 产物
-3. `wrangler pages deploy` 部署到非主账号
-4. 在 CF Pages 配置环境变量（PASSWORD、NOVATV_CONFIG、NEXT_PUBLIC_SITE_NAME）
+**部署方式：手动命令行部署 Worker**（OpenNext 适配器）。
+
+> 背景：`@cloudflare/next-on-pages` 已被官方废弃（2025年弃用），改用 `@opennextjs/cloudflare`（官方推荐，部署到 Workers 而非 Pages）。OpenNext 在 Pages 上不兼容（会 404），正确目标是 **Workers**。
+
+### 部署步骤
+
+```bash
+# 1. 本地构建验证
+pnpm build              # Next.js 生产构建
+npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion  # OpenNext 构建，生成 .open-next/worker.js
+
+# 2. 配置环境变量（首次部署时）
+echo "密码" | npx wrangler secret put PASSWORD --name novatv
+echo "NovaTV" | npx wrangler secret put NEXT_PUBLIC_SITE_NAME --name novatv
+echo "localstorage" | npx wrangler secret put NEXT_PUBLIC_STORAGE_TYPE --name novatv
+echo "true" | npx wrangler secret put NEXT_PUBLIC_ENABLE_LIVE --name novatv
+echo "direct" | npx wrangler secret put NEXT_PUBLIC_DOUBAN_PROXY_TYPE --name novatv
+
+# 3. 部署到 Workers（需先登录 chinesev 账号）
+npx wrangler@3.99.0 deploy
+```
+
+**线上地址**：`https://novatv.chinesev.workers.dev`
+
+**wrangler.jsonc**（项目根）配置：`main=.open-next/worker.js`、`compatibility_flags=["nodejs_compat"]`、`account_id`=chinesev 的 ID、assets 指向 `.open-next/assets`。
+
+### 环境变量清单
+
+| 变量 | 值 | 说明 |
+|---|---|---|
+| `PASSWORD` | 正式密码（当前 digital）| 站点访问密码，必填 |
+| `NEXT_PUBLIC_SITE_NAME` | `NovaTV` | 站点名 |
+| `NEXT_PUBLIC_STORAGE_TYPE` | `localstorage` | 固定值 |
+| `NEXT_PUBLIC_ENABLE_LIVE` | `true` | 直播功能 |
+| `NEXT_PUBLIC_DOUBAN_PROXY_TYPE` | `direct` | 豆瓣服务端代理 |
+
+### GitHub 仓库（代码备份）
+
+- 仓库：`https://github.com/ileonspace/novatv`（**公开**）
+- 用途：仅代码托管/备份，**与 Cloudflare 无自动部署连接**
+- 每次改代码：手动部署到 Worker（上面步骤）
+- 部署副本目录：本地 `deploy-Github/`（不含 node_modules/.next/.env.local）
+
+> ⚠️ 未采用 GitHub Actions 自动部署：需要在 GitHub 存 Cloudflare API token，有安全顾虑，故保持手动部署。
 
 详见 `ITERATION_LOG.md` 部署记录。
 

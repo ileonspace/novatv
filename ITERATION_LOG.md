@@ -4,6 +4,45 @@
 
 ---
 
+## 部署记录（最终方案）— 2026-08-03 — 迁移 opennext + Worker 部署成功
+
+**结论**：项目已成功部署到 Cloudflare **Worker**（`https://novatv.chinesev.workers.dev`），登录/搜索/播放全部正常。
+
+### 为什么迁移到 opennext
+- `@cloudflare/next-on-pages` 已被 Cloudflare **官方废弃**（2025年9月归档），是之前线上 500 的根因
+- 官方推荐替代：**`@opennextjs/cloudflare`**，部署目标是 **Workers**（不是 Pages）
+
+### 迁移内容
+- 移除 `@cloudflare/next-on-pages`，改用 `@opennextjs/cloudflare`
+- 移除 48 处 `export const runtime = "edge"`（OpenNext 用 Node runtime）
+- 新增 `open-next.config.ts` / `wrangler.jsonc`
+- 构建命令：`opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion`
+
+### 部署方式（重要决策）
+- **最终采用：手动命令行部署 Worker**（`npx wrangler@3.99.0 deploy`）
+- **尝试过但放弃的**：
+  - **Pages + GitHub 自动部署** → OpenNext 与 Pages 不兼容（404）
+  - **GitHub Actions 自动部署** → 需在 GitHub 存 Cloudflare API token，用户有安全顾虑，放弃
+- **GitHub 仓库**（`ileonspace/novatv` 公开）仅作代码备份，与 CF 无自动部署连接
+
+### 踩坑记录（重要）
+1. **部署前必须 `wrangler whoami` 验证账号**（曾误用主账号 vipleon，血泪教训）
+2. **本地 wrangler 配置残留主账号 token** → 导致部署请求到主账号 → 删除 `~/.wrangler/config/default.toml`
+3. **wrangler.jsonc 需显式 `account_id`**（否则 wrangler 默认用错的账号）
+4. **OpenNext 在 Pages 上 404**（Pages 不是 OpenNext 的目标平台）
+5. **本机 curl 访问 workers.dev 超时**（网络问题），但浏览器正常——线上验证以浏览器为准
+6. **Next.js 14.2.30 需 `--dangerouslyUseUnsupportedNextVersion`**（opennext 支持政策）
+7. **macOS 12 跑不了 workerd/miniflare**（本地无法 preview，但部署不受影响）
+
+### 环境变量（Worker secrets）
+- `PASSWORD=digital`、`NEXT_PUBLIC_SITE_NAME=NovaTV`、`NEXT_PUBLIC_STORAGE_TYPE=localstorage`、`NEXT_PUBLIC_ENABLE_LIVE=true`、`NEXT_PUBLIC_DOUBAN_PROXY_TYPE=direct`
+
+关联：[[cloudflare-deploy-account]]、[[novatv-project]]、[[deploy-confirmation-required]]
+
+---
+
+## 部署记录 — 2026-08-03 — Cloudflare Pages 部署尝试（未成功，已回退）
+
 ## 部署记录 — 2026-08-03 — Cloudflare Pages 部署尝试（未成功，已回退）
 
 **状态**：❌ 线上 500，已回退到 v1.2.9d 本地状态。代码未变，本地完全正常。
