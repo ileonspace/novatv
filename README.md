@@ -47,10 +47,6 @@
 
 ---
 
-### 🙏 特别致谢
+### 🙏 致谢
 
-由衷感谢 **[MoonTechLab](https://github.com/MoonTechLab)** 团队的开源精神与卓越贡献！
-
-没有 [LunaTV](https://github.com/MoonTechLab/LunaTV) 这个优秀、完整的影视聚合播放器项目，就不会有今天的 NovaTV。感谢原作者无私地开放源码、持续维护，让影视聚合技术得以分享和延续。本项目的每一处架构、每一个功能都源于他们的智慧与付出，在此致以最诚挚的敬意和感谢！💚
-
-愿开源精神长存，也愿 MoonTechLab 团队越来越好！
+感谢 **[MoonTechLab](https://github.com/MoonTechLab)** 团队开源 [LunaTV](https://github.com/MoonTechLab/LunaTV) 项目，本项目的架构和功能均基于此构建。
