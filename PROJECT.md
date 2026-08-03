@@ -113,15 +113,30 @@ npx @cloudflare/next-on-pages --experimental-minify   # CF Pages 构建
 pnpm build              # Next.js 生产构建
 npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion  # OpenNext 构建，生成 .open-next/worker.js
 
-# 2. 配置环境变量（首次部署时）
+# 2. 同步部署文件到 deploy-cf 目录（部署专用目录）
+#    cp -r .open-next deploy-cf/  &&  cp wrangler.jsonc deploy-cf/
+
+# 3. 从 deploy-cf 部署 Worker（部署文件齐备，独立目录）
+cd deploy-cf
+npx wrangler@3.99.0 deploy
+```
+
+### 部署目录说明
+
+| 目录 | 用途 | 是否入 git |
+|---|---|---|
+| `deploy-cf/` | **Worker 部署专用**（含 .open-next/ 产物 + wrangler.jsonc），从这里部署 | ❌ 排除 |
+| `deploy-Github/` | GitHub 代码备份副本（源码，不含构建产物/敏感文件） | ❌ 排除（独立 git 仓库）|
+| 主项目根 | 开发/构建主目录 | ✅ 入 git |
+
+### 环境变量（首次部署时配置）
+
+```bash
 echo "密码" | npx wrangler secret put PASSWORD --name novatv
 echo "NovaTV" | npx wrangler secret put NEXT_PUBLIC_SITE_NAME --name novatv
 echo "localstorage" | npx wrangler secret put NEXT_PUBLIC_STORAGE_TYPE --name novatv
 echo "true" | npx wrangler secret put NEXT_PUBLIC_ENABLE_LIVE --name novatv
 echo "direct" | npx wrangler secret put NEXT_PUBLIC_DOUBAN_PROXY_TYPE --name novatv
-
-# 3. 部署到 Workers（需先登录 chinesev 账号）
-npx wrangler@3.99.0 deploy
 ```
 
 **线上地址**：`https://novatv.chinesev.workers.dev`
