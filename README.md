@@ -45,4 +45,12 @@
 - **NC（非商业）**：禁止任何商业化行为
 - **SA（相同方式共享）**：任何衍生项目必须以相同协议（CC BY-NC-SA）开源
 
-感谢原项目 [MoonTechLab](https://github.com/MoonTechLab) 的开源贡献。
+---
+
+### 🙏 特别致谢
+
+由衷感谢 **[MoonTechLab](https://github.com/MoonTechLab)** 团队的开源精神与卓越贡献！
+
+没有 [LunaTV](https://github.com/MoonTechLab/LunaTV) 这个优秀、完整的影视聚合播放器项目，就不会有今天的 NovaTV。感谢原作者无私地开放源码、持续维护，让影视聚合技术得以分享和延续。本项目的每一处架构、每一个功能都源于他们的智慧与付出，在此致以最诚挚的敬意和感谢！💚
+
+愿开源精神长存，也愿 MoonTechLab 团队越来越好！
