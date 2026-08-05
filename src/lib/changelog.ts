@@ -12,6 +12,21 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-08-05",
+    added: [
+      "PWA 离线增强：Service Worker 静态资源缓存 + 离线回退，可安装到桌面/电视",
+      "核心链路自动化回归测试（登录/搜索/播放/收藏，e2e/core-regression.py）"
+    ],
+    changed: [
+      "Service Worker 改为运行时缓存策略（不依赖预缓存列表，版本迭代后无需更新 SW 文件）"
+    ],
+    fixed: [
+      "修复认证中间件误拦截 PWA 公开资源（sw.js / manifest.json / robots.txt / icons）",
+      "清理失效的旧 workbox Service Worker 文件（next-pwa 从未启用，属残留）"
+    ]
+  },
+  {
     version: "1.3.4",
     date: "2026-08-05",
     added: [],
