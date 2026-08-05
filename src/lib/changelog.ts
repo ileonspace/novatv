@@ -12,6 +12,18 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.5.0",
+    date: "2026-08-05",
+    added: [],
+    changed: [
+      "升级 Next.js 15 + React 19（OpenNext 官方兼容版本，消除 dangerouslyUnsupportedNextVersion 依赖）",
+      "next.config.js 固定 outputFileTracingRoot，移除已废弃的 swcMinify 配置"
+    ],
+    fixed: [
+      "构建产物定位异常（主目录残留 pnpm-lock.yaml 干扰 workspace 根推断）"
+    ]
+  },
+  {
     version: "1.4.0",
     date: "2026-08-05",
     added: [

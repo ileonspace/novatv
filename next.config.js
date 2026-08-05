@@ -1,13 +1,17 @@
 /** @type {import('next').NextConfig} */
 /* eslint-disable @typescript-eslint/no-var-requires */
 
+const path = require('path');
+
 const nextConfig = {
+  // 固定工作区根，避免主目录残留 pnpm-lock.yaml 干扰构建产物定位
+  outputFileTracingRoot: path.resolve(__dirname),
+
   eslint: {
     dirs: ['src'],
   },
 
   reactStrictMode: false,
-  swcMinify: false,
 
   images: {
     unoptimized: true,

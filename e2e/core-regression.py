@@ -39,7 +39,11 @@ async def login(page):
         btn = page.locator('button[type=submit]')
         if await btn.count() and not await btn.first.is_disabled():
             await btn.first.click(timeout=5000)
-        await page.wait_for_timeout(3000)
+        # 等待登录跳转（轮询最长 10 秒）
+        for _ in range(20):
+            await page.wait_for_timeout(500)
+            if '/login' not in page.url:
+                break
     return page.url
 
 
