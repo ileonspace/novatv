@@ -73,6 +73,10 @@ export const UserMenu: React.FC = () => {
   const [defaultAggregateSearch, setDefaultAggregateSearch] = useState(true);
   const [doubanProxyUrl, setDoubanProxyUrl] = useState('');
   const [enableOptimization, setEnableOptimization] = useState(true);
+  // 显示直播开关状态（实时生效，不刷新页面）
+  const [showLiveState, setShowLiveState] = useState<boolean>(() =>
+    getShowLive()
+  );
   const [fluidSearch, setFluidSearch] = useState(true);
   const [liveDirectConnect, setLiveDirectConnect] = useState(false);
   const [doubanDataSource, setDoubanDataSource] = useState('cmliussss-cdn-tencent');
@@ -562,26 +566,32 @@ export const UserMenu: React.FC = () => {
                   <span className='font-medium'>导入配置</span>
                 </button>
 
-                {/* 显示直播开关 */}
-                <button
-                  onClick={() => {
-                    setShowLive(!getShowLive());
-                    window.location.reload();
-                  }}
-                  className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm'
-                >
+                {/* 显示直播开关（实时生效，不刷新页面） */}
+                <div className='w-full px-3 py-2 flex items-center gap-2.5 text-gray-700 dark:text-gray-300'>
                   <Radio className='w-4 h-4 text-gray-500 dark:text-gray-400' />
                   <span className='font-medium flex-1'>显示直播</span>
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                      getShowLive()
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                        : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
-                    }`}
-                  >
-                    {getShowLive() ? '开' : '关'}
-                  </span>
-                </button>
+                  <label className='flex items-center cursor-pointer'>
+                    <div className='relative'>
+                      <input
+                        type='checkbox'
+                        className='sr-only peer'
+                        checked={showLiveState}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setShowLive(checked);
+                          setShowLiveState(checked);
+                          window.dispatchEvent(
+                            new CustomEvent('showLiveChanged', {
+                              detail: checked,
+                            })
+                          );
+                        }}
+                      />
+                      <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                      <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
+                    </div>
+                  </label>
+                </div>
               </div>
             )}
           </div>
@@ -663,11 +673,11 @@ export const UserMenu: React.FC = () => {
 
       {/* 设置面板 */}
       <div
-        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] flex flex-col'
+        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[calc(100dvh-2rem)] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] flex flex-col overflow-hidden'
       >
         {/* 内容容器 - 独立的滚动区域 */}
         <div
-          className='flex-1 p-6 overflow-y-auto'
+          className='flex-1 min-h-0 p-6 overflow-y-auto'
           data-panel-content
           style={{
             touchAction: 'pan-y', // 只允许垂直滚动

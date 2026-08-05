@@ -12,6 +12,20 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.3.3",
+    date: "2026-08-05",
+    added: [
+      "「显示直播」升级为滑块开关：切换后导航栏实时显示/隐藏直播分类，无需刷新页面",
+      "导航栏监听开关变化，桌面侧边栏与移动端底部导航同步实时响应"
+    ],
+    changed: [
+      "本地设置弹窗移动端适配：采用动态视口高度，内容区域独立滚动，四周留白"
+    ],
+    fixed: [
+      "移动端本地设置弹窗上下内容被遮挡、关闭按钮不可见"
+    ]
+  },
+  {
     version: "1.3.2",
     date: "2026-08-05",
     added: [],

@@ -150,20 +150,31 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
 
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
-    // 直播按设置显示（默认隐藏）
-    if (runtimeConfig?.ENABLE_WEB_LIVE && getShowLive()) {
+    // 直播按设置实时显示（默认隐藏，切换开关不刷新页面）
+    const applyLive = (show: boolean) => {
+      if (!runtimeConfig?.ENABLE_WEB_LIVE) return;
       setMenuItems((prevItems) => {
-        if (prevItems.some((item) => item.href === '/live')) return prevItems;
-        return [
-          ...prevItems,
-          {
-            icon: Radio,
-            label: '直播',
-            href: '/live',
-          },
-        ];
+        const exists = prevItems.some((item) => item.href === '/live');
+        if (show && !exists) {
+          return [
+            ...prevItems,
+            {
+              icon: Radio,
+              label: '直播',
+              href: '/live',
+            },
+          ];
+        }
+        if (!show && exists) {
+          return prevItems.filter((item) => item.href !== '/live');
+        }
+        return prevItems;
       });
-    }
+    };
+    applyLive(getShowLive());
+    const handler = (e: Event) =>
+      applyLive((e as CustomEvent).detail as boolean);
+    window.addEventListener('showLiveChanged', handler);
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
       setMenuItems((prevItems) => {
         if (prevItems.some((item) => item.href === '/douban?type=custom')) return prevItems;
@@ -177,6 +188,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
         ];
       });
     }
+    return () => window.removeEventListener('showLiveChanged', handler);
   }, []);
 
   return (
