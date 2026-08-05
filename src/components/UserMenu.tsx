@@ -567,7 +567,7 @@ export const UserMenu: React.FC = () => {
                 </button>
 
                 {/* 显示直播开关（实时生效，不刷新页面） */}
-                <div className='w-full px-3 py-2 flex items-center gap-2.5 text-gray-700 dark:text-gray-300'>
+                <div className='w-full px-3 py-2 flex items-center gap-2.5 text-gray-700 dark:text-gray-300 text-sm'>
                   <Radio className='w-4 h-4 text-gray-500 dark:text-gray-400' />
                   <span className='font-medium flex-1'>显示直播</span>
                   <label className='flex items-center cursor-pointer'>

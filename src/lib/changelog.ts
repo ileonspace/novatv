@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "1.3.4",
+    date: "2026-08-05",
+    added: [],
+    changed: [
+      "管理面板「显示直播」与「导入配置」字号统一为 text-sm"
+    ],
+    fixed: [
+      "管理面板显示直播开关字体比导入配置大（缺 text-sm）"
+    ]
+  },
+  {
     version: "1.3.3",
     date: "2026-08-05",
     added: [
