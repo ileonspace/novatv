@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const tvgId = searchParams.get('tvgId');
 
     if (!sourceKey) {
-      return NextResponse.json({ error: '缺少直播源参数' }, { status: 400 });
+      return NextResponse.json({ error: '缺少直播数据参数' }, { status: 400 });
     }
 
     if (!tvgId) {

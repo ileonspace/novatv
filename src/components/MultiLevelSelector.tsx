@@ -516,7 +516,7 @@ const MultiLevelSelector: React.FC<MultiLevelSelectorProps> = ({
           >
             <button
               onClick={() => handleCategoryClick(category.key)}
-              className={`relative z-10 px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[13px] sm:text-[13px] md:text-base font-medium rounded-full transition-all duration-200 whitespace-nowrap ${activeCategory === category.key
+              className={`relative z-10 px-2 py-1.5 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-[13px] sm:text-[13px] font-medium rounded-full transition-all duration-200 whitespace-nowrap ${activeCategory === category.key
                   ? isDefaultValue(category.key)
                     ? 'text-gray-900 dark:text-gray-100 cursor-default'
                     : 'text-green-600 dark:text-green-400 cursor-default'

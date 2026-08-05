@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (!targetSite) {
       return NextResponse.json(
         {
-          error: `未找到指定的视频源: ${resourceId}`,
+          error: `未找到指定的视频数据: ${resourceId}`,
           result: null,
         },
         { status: 404 }

@@ -17,9 +17,9 @@ interface MobileActionSheetProps {
   title: string;
   actions: ActionItem[];
   poster?: string;
-  sources?: string[]; // 播放源信息
-  isAggregate?: boolean; // 是否为聚合内容
-  sourceName?: string; // 播放源名称
+  sources?: string[]; // 视频数据信息
+  isAggregate?: boolean; // 是否为合并内容
+  sourceName?: string; // 视频数据名称
   currentEpisode?: number; // 当前集数
   totalEpisodes?: number; // 总集数
   origin?: 'vod' | 'live';
@@ -310,20 +310,20 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
           ))}
         </div>
 
-        {/* 播放源信息展示区域 */}
+        {/* 视频数据信息展示区域 */}
         {isAggregate && sources && sources.length > 0 && (
           <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800">
             {/* 标题区域 */}
             <div className="mb-3">
               <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                可用播放源
+                可用视频数据
               </h4>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                共 {sources.length} 个播放源
+                共 {sources.length} 个视频数据
               </p>
             </div>
 
-            {/* 播放源列表 */}
+            {/* 视频数据列表 */}
             <div className="max-h-32 overflow-y-auto">
               <div className="grid grid-cols-2 gap-2">
                 {sources.map((source, index) => (

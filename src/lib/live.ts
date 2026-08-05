@@ -14,6 +14,8 @@ export interface LiveChannels {
     logo: string;
     group: string;
     url: string;
+    /** 频道级 UA（m3u 的 http-user-agent 属性，源站要求特定 UA 时使用） */
+    ua?: string;
   }[];
   epgUrl: string;
   epgs: {
@@ -36,14 +38,14 @@ export async function getCachedLiveChannels(
   livesOverride?: any[]
 ): Promise<LiveChannels | null> {
   const config = await getConfig();
-  // NovaTV：优先用请求携带的前端直播源，否则用环境变量配置
+  // NovaTV：优先用请求携带的前端直播数据，否则用环境变量配置
   const liveInfo =
     livesOverride?.find((live) => live.key === key) ||
     config.LiveConfig?.find((live) => live.key === key);
   if (!liveInfo) {
     return null;
   }
-  // 缓存键含 URL：直播源 URL 变更时自动失效，避免串源
+  // 缓存键含 URL：直播数据 URL 变更时自动失效，避免串源
   const cacheKey = `${key}:${liveInfo.url}`;
   if (!cachedLiveChannels[cacheKey]) {
     // 清理旧的纯 key 缓存（配置变更前）
@@ -111,11 +113,16 @@ async function parseEpg(epgUrl: string, ua: string, tvgIds: string[]): Promise<{
   const result: { [key: string]: { start: string; end: string; title: string }[] } = {};
 
   try {
+    // EPG 5s 超时：慢/不可达时不再拖住频道加载（频道列表正常返回）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     const response = await fetch(epgUrl, {
       headers: {
         'User-Agent': ua,
       },
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       return {};
     }
@@ -212,6 +219,7 @@ function parseM3U(sourceKey: string, m3uContent: string): {
     logo: string;
     group: string;
     url: string;
+    ua?: string;
   }[];
 } {
   const channels: {
@@ -221,6 +229,7 @@ function parseM3U(sourceKey: string, m3uContent: string): {
     logo: string;
     group: string;
     url: string;
+    ua?: string;
   }[] = [];
 
   const lines = m3uContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -256,6 +265,10 @@ function parseM3U(sourceKey: string, m3uContent: string): {
       const groupTitleMatch = line.match(/group-title="([^"]*)"/);
       const group = groupTitleMatch ? groupTitleMatch[1] : '无分组';
 
+      // 提取频道级 UA（http-user-agent 属性，部分源要求特定 UA 才能访问）
+      const uaMatch = line.match(/http-user-agent="([^"]*)"/);
+      const ua = uaMatch ? uaMatch[1] : '';
+
       // 提取标题（#EXTINF 行最后的逗号后面的内容）
       const titleMatch = line.match(/,([^,]*)$/);
       const title = titleMatch ? titleMatch[1].trim() : '';
@@ -275,7 +288,8 @@ function parseM3U(sourceKey: string, m3uContent: string): {
             name,
             logo,
             group,
-            url
+            url,
+            ua
           });
           channelIndex++;
         }

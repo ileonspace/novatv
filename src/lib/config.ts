@@ -206,7 +206,7 @@ async function getInitConfig(configFile: string, subConfig: {
       SiteName: process.env.NEXT_PUBLIC_SITE_NAME || 'NovaTV',
       Announcement:
         process.env.ANNOUNCEMENT ||
-        '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。',
+        '本网站仅提供信息检索与导航服务，不存储任何资源，不对任何第三方内容的准确性、合法性、完整性负责。',
       SearchDownstreamMaxPage:
         Number(process.env.NEXT_PUBLIC_SEARCH_MAX_PAGE) || 5,
       SiteInterfaceCacheTime: cfgFile.cache_time || 7200,
@@ -262,7 +262,7 @@ async function getInitConfig(configFile: string, subConfig: {
     });
   });
 
-  // 从配置文件中补充直播源信息
+  // 从配置文件中补充直播数据信息
   Object.entries(cfgFile.lives || []).forEach(([key, live]) => {
     if (!adminConfig.LiveConfig) {
       adminConfig.LiveConfig = [];
@@ -364,7 +364,7 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
     return true;
   });
 
-  // 直播源去重
+  // 直播数据去重
   const seenLiveKeys = new Set<string>();
   adminConfig.LiveConfig = adminConfig.LiveConfig.filter((live) => {
     if (seenLiveKeys.has(live.key)) {
@@ -425,7 +425,7 @@ export async function getApiSitesFromRequest(
   return getAvailableApiSites(username);
 }
 
-// 解析 base64 配置字符串 → 直播源列表
+// 解析 base64 配置字符串 → 直播数据列表
 export function parseLivesFromConfig(configParam: string): any[] {
   try {
     const binary = atob(configParam);
@@ -447,7 +447,7 @@ export function parseLivesFromConfig(configParam: string): any[] {
   }
 }
 
-// 从请求获取直播源：优先用请求携带的 config，否则回退环境变量配置
+// 从请求获取直播数据：优先用请求携带的 config，否则回退环境变量配置
 export async function getLiveConfigFromRequest(request: any): Promise<any[]> {
   const configParam = request.nextUrl?.searchParams?.get('config');
   if (configParam) {

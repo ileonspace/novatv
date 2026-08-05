@@ -6,7 +6,7 @@ const SiteContext = createContext<{ siteName: string; announcement?: string }>({
   // 默认值
   siteName: 'NovaTV',
   announcement:
-    '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。',
+    '本网站仅提供信息检索与导航服务，不存储任何资源，不对任何第三方内容的准确性、合法性、完整性负责。',
 });
 
 export const useSite = () => useContext(SiteContext);

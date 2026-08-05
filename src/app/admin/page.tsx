@@ -270,7 +270,7 @@ interface SiteConfig {
   EnableWebLive: boolean;
 }
 
-// 视频源数据类型
+// 视频数据数据类型
 interface DataSource {
   name: string;
   key: string;
@@ -280,7 +280,7 @@ interface DataSource {
   from: 'config' | 'custom';
 }
 
-// 直播源数据类型
+// 直播数据数据类型
 interface LiveDataSource {
   name: string;
   key: string;
@@ -825,7 +825,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   用户组名称
                 </th>
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                  可用视频源
+                  可用视频数据
                 </th>
                 <th className='px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
                   操作
@@ -1458,10 +1458,10 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   />
                 </div>
 
-                {/* 可用视频源 */}
+                {/* 可用视频数据 */}
                 <div>
                   <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4'>
-                    可用视频源
+                    可用视频数据
                   </label>
                   <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
                     {config?.SourceConfig?.map((source) => (
@@ -1570,10 +1570,10 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
               </div>
 
               <div className='space-y-6'>
-                {/* 可用视频源 */}
+                {/* 可用视频数据 */}
                 <div>
                   <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4'>
-                    可用视频源
+                    可用视频数据
                   </label>
                   <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
                     {config?.SourceConfig?.map((source) => (
@@ -2020,7 +2020,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   );
 }
 
-// 视频源配置组件
+// 视频数据配置组件
 const VideoSourceConfig = ({
   config,
   refreshConfig,
@@ -2196,7 +2196,7 @@ const VideoSourceConfig = ({
       setValidationResults([]); // 清空之前的结果
       setShowValidationModal(false); // 立即关闭弹窗
 
-      // 初始化所有视频源为检测中状态
+      // 初始化所有视频数据为检测中状态
       const initialResults = sources.map(source => ({
         key: source.key,
         name: source.name,
@@ -2216,7 +2216,7 @@ const VideoSourceConfig = ({
 
             switch (data.type) {
               case 'start':
-                console.log(`开始检测 ${data.totalSources} 个视频源`);
+                console.log(`开始检测 ${data.totalSources} 个视频数据`);
                 break;
 
               case 'source_result':
@@ -2247,7 +2247,7 @@ const VideoSourceConfig = ({
                 break;
 
               case 'complete':
-                console.log(`检测完成，共检测 ${data.completedSources} 个视频源`);
+                console.log(`检测完成，共检测 ${data.completedSources} 个视频数据`);
                 eventSource.close();
                 setIsValidating(false);
                 break;
@@ -2448,7 +2448,7 @@ const VideoSourceConfig = ({
   // 批量操作
   const handleBatchOperation = async (action: 'batch_enable' | 'batch_disable' | 'batch_delete') => {
     if (selectedSources.size === 0) {
-      showAlert({ type: 'warning', title: '请先选择要操作的视频源', message: '请选择至少一个视频源' });
+      showAlert({ type: 'warning', title: '请先选择要操作的视频数据', message: '请选择至少一个视频数据' });
       return;
     }
 
@@ -2458,15 +2458,15 @@ const VideoSourceConfig = ({
 
     switch (action) {
       case 'batch_enable':
-        confirmMessage = `确定要启用选中的 ${keys.length} 个视频源吗？`;
+        confirmMessage = `确定要启用选中的 ${keys.length} 个视频数据吗？`;
         actionName = '批量启用';
         break;
       case 'batch_disable':
-        confirmMessage = `确定要禁用选中的 ${keys.length} 个视频源吗？`;
+        confirmMessage = `确定要禁用选中的 ${keys.length} 个视频数据吗？`;
         actionName = '批量禁用';
         break;
       case 'batch_delete':
-        confirmMessage = `确定要删除选中的 ${keys.length} 个视频源吗？此操作不可恢复！`;
+        confirmMessage = `确定要删除选中的 ${keys.length} 个视频数据吗？此操作不可恢复！`;
         actionName = '批量删除';
         break;
     }
@@ -2479,7 +2479,7 @@ const VideoSourceConfig = ({
       onConfirm: async () => {
         try {
           await withLoading(`batchSource_${action}`, () => callSourceApi({ action, keys }));
-          showAlert({ type: 'success', title: `${actionName}成功`, message: `${actionName}了 ${keys.length} 个视频源`, timer: 2000 });
+          showAlert({ type: 'success', title: `${actionName}成功`, message: `${actionName}了 ${keys.length} 个视频数据`, timer: 2000 });
           // 重置选择状态
           setSelectedSources(new Set());
         } catch (err) {
@@ -2503,10 +2503,10 @@ const VideoSourceConfig = ({
 
   return (
     <div className='space-y-6'>
-      {/* 添加视频源表单 */}
+      {/* 添加视频数据表单 */}
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
         <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-          视频源列表
+          视频数据列表
         </h4>
         <div className='flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2'>
           {/* 批量操作按钮 - 移动端显示在下一行，PC端显示在左侧 */}
@@ -2515,7 +2515,7 @@ const VideoSourceConfig = ({
               <div className='flex flex-wrap items-center gap-3 order-2 sm:order-1'>
                 <span className='text-sm text-gray-600 dark:text-gray-400'>
                   <span className='sm:hidden'>已选 {selectedSources.size}</span>
-                  <span className='hidden sm:inline'>已选择 {selectedSources.size} 个视频源</span>
+                  <span className='hidden sm:inline'>已选择 {selectedSources.size} 个视频数据</span>
                 </span>
                 <button
                   onClick={() => handleBatchOperation('batch_enable')}
@@ -2564,7 +2564,7 @@ const VideoSourceConfig = ({
               onClick={() => setShowAddForm(!showAddForm)}
               className={showAddForm ? buttonStyles.secondary : buttonStyles.success}
             >
-              {showAddForm ? '取消' : '添加视频源'}
+              {showAddForm ? '取消' : '添加视频数据'}
             </button>
           </div>
         </div>
@@ -2624,7 +2624,7 @@ const VideoSourceConfig = ({
 
 
 
-      {/* 视频源表格 */}
+      {/* 视频数据表格 */}
       <div className='border border-gray-200 dark:border-gray-700 rounded-lg max-h-[28rem] overflow-y-auto overflow-x-auto relative' data-table="source-list">
         <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
           <thead className='bg-gray-50 dark:bg-gray-900 sticky top-0 z-10'>
@@ -2700,7 +2700,7 @@ const VideoSourceConfig = ({
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' onClick={() => setShowValidationModal(false)}>
           <div className='bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4' onClick={(e) => e.stopPropagation()}>
             <h3 className='text-lg font-medium text-gray-900 dark:text-gray-100 mb-4'>
-              视频源有效性检测
+              视频数据有效性检测
             </h3>
             <p className='text-sm text-gray-600 dark:text-gray-400 mb-4'>
               请输入检测用的搜索关键词
@@ -3350,7 +3350,7 @@ const ConfigFileComponent = ({ config, refreshConfig }: { config: AdminConfig | 
 
         <div className='flex items-center justify-between'>
           <div className='text-xs text-gray-500 dark:text-gray-400'>
-            支持 JSON 格式，用于配置视频源和自定义分类
+            支持 JSON 格式，用于配置视频数据和自定义分类
           </div>
           <button
             onClick={handleSave}
@@ -3973,7 +3973,7 @@ const SiteConfigComponent = ({ config, refreshConfig }: { config: AdminConfig | 
   );
 };
 
-// 直播源配置组件
+// 直播数据配置组件
 const LiveSourceConfig = ({
   config,
   refreshConfig,
@@ -4059,7 +4059,7 @@ const LiveSourceConfig = ({
     });
   };
 
-  // 刷新直播源
+  // 刷新直播数据
   const handleRefreshLiveSources = async () => {
     if (isRefreshing) return;
 
@@ -4078,7 +4078,7 @@ const LiveSourceConfig = ({
 
         // 刷新成功后重新获取配置
         await refreshConfig();
-        showAlert({ type: 'success', title: '刷新成功', message: '直播源已刷新', timer: 2000 });
+        showAlert({ type: 'success', title: '刷新成功', message: '直播数据已刷新', timer: 2000 });
       } catch (err) {
         showError(err instanceof Error ? err.message : '刷新失败', showAlert);
         throw err;
@@ -4260,10 +4260,10 @@ const LiveSourceConfig = ({
 
   return (
     <div className='space-y-6'>
-      {/* 添加直播源表单 */}
+      {/* 添加直播数据表单 */}
       <div className='flex items-center justify-between'>
         <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-          直播源列表
+          直播数据列表
         </h4>
         <div className='flex items-center space-x-2'>
           <button
@@ -4274,13 +4274,13 @@ const LiveSourceConfig = ({
               : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg transition-colors'
               }`}
           >
-            <span>{isRefreshing || isLoading('refreshLiveSources') ? '刷新中...' : '刷新直播源'}</span>
+            <span>{isRefreshing || isLoading('refreshLiveSources') ? '刷新中...' : '刷新直播数据'}</span>
           </button>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             className={showAddForm ? buttonStyles.secondary : buttonStyles.success}
           >
-            {showAddForm ? '取消' : '添加直播源'}
+            {showAddForm ? '取消' : '添加直播数据'}
           </button>
         </div>
       </div>
@@ -4347,12 +4347,12 @@ const LiveSourceConfig = ({
         </div>
       )}
 
-      {/* 编辑直播源表单 */}
+      {/* 编辑直播数据表单 */}
       {editingLiveSource && (
         <div className='p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4'>
           <div className='flex items-center justify-between'>
             <h5 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-              编辑直播源: {editingLiveSource.name}
+              编辑直播数据: {editingLiveSource.name}
             </h5>
             <button
               onClick={handleCancelEdit}
@@ -4444,7 +4444,7 @@ const LiveSourceConfig = ({
         </div>
       )}
 
-      {/* 直播源表格 */}
+      {/* 直播数据表格 */}
       <div className='border border-gray-200 dark:border-gray-700 rounded-lg max-h-[28rem] overflow-y-auto overflow-x-auto relative' data-table="live-source-list">
         <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
           <thead className='bg-gray-50 dark:bg-gray-900 sticky top-0 z-10'>
@@ -4703,9 +4703,9 @@ function AdminPageClient() {
               />
             </CollapsibleTab>
 
-            {/* 视频源配置标签 */}
+            {/* 视频数据配置标签 */}
             <CollapsibleTab
-              title='视频源配置'
+              title='视频数据配置'
               icon={
                 <Video size={20} className='text-gray-600 dark:text-gray-400' />
               }
@@ -4715,9 +4715,9 @@ function AdminPageClient() {
               <VideoSourceConfig config={config} refreshConfig={fetchConfig} />
             </CollapsibleTab>
 
-            {/* 直播源配置标签 */}
+            {/* 直播数据配置标签 */}
             <CollapsibleTab
-              title='直播源配置'
+              title='直播数据配置'
               icon={
                 <Tv size={20} className='text-gray-600 dark:text-gray-400' />
               }
@@ -4803,7 +4803,7 @@ function AdminPageClient() {
                     </span>
                   </div>
                   <p className='text-sm text-yellow-700 dark:text-yellow-400'>
-                    此操作将重置用户封禁和管理员设置、自定义视频源，站点配置将重置为默认值，是否继续？
+                    此操作将重置用户封禁和管理员设置、自定义视频数据，站点配置将重置为默认值，是否继续？
                   </p>
                 </div>
               </div>

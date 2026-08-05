@@ -74,15 +74,15 @@ export function isSafeUrl(rawUrl: string): boolean {
     const hostname = u.hostname.toLowerCase().replace(/\.$/, '');
     if (hostname === 'localhost' || hostname.endsWith('.localhost')) return false;
 
-    // DNS 重绑定防护：内嵌 IP 或已知重绑定后缀 → 拒绝
-    if (isDnsRebindingRisk(hostname)) return false;
-
-    // IPv4 字面量
+    // IPv4 字面量：直接走私网/回环判断（纯 IP 本身不是 DNS 重绑定伪装）
     const ipv4 = isIpv4(hostname);
     if (ipv4) return !isPrivateIpv4(ipv4);
 
     // IPv6
     if (hostname.includes(':')) return !isUnsafeIpv6(hostname);
+
+    // DNS 重绑定防护：仅对域名（非 IP 字面量）检测内嵌 IP 或重绑定后缀
+    if (isDnsRebindingRisk(hostname)) return false;
 
     return true;
   } catch {

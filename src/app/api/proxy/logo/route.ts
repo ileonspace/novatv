@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   }
 
   const config = await getConfig();
-  // 优先前端导入的直播源（config），否则环境变量
+  // 优先前端导入的直播数据（config），否则环境变量
   const configParam = searchParams.get('config');
   const livesOverride = configParam ? parseLivesFromConfig(configParam) : undefined;
   const liveSource =

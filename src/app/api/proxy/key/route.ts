@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   const config = await getConfig();
-  // 优先前端导入的直播源（config），否则环境变量
+  // 优先前端导入的直播数据（config），否则环境变量
   const configParam = searchParams.get('config');
   const livesOverride = configParam ? parseLivesFromConfig(configParam) : undefined;
   const liveSource =
@@ -25,7 +25,8 @@ export async function GET(request: Request) {
   if (!liveSource) {
     return NextResponse.json({ error: 'Source not found' }, { status: 404 });
   }
-  const ua = liveSource.ua || 'AptvPlayer/1.4.10';
+  // 优先使用频道级 UA（前端播放时携带），其次源级 UA，最后默认值
+  const ua = searchParams.get('ua') || liveSource.ua || 'AptvPlayer/1.4.10';
 
   try {
     const decodedUrl = decodeURIComponent(url);

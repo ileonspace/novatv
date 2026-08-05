@@ -197,14 +197,13 @@ export async function searchFromApi(
 // 匹配 m3u8 链接的正则
 const M3U8_PATTERN = /(https?:\/\/[^"'\s]+?\.m3u8)/g;
 
-export async function getDetailFromApi(
+/**
+ * 从源站 JSON API 获取详情（?ac=videolist&ids=）
+ */
+async function fetchDetailFromJson(
   apiSite: ApiSite,
   id: string
 ): Promise<SearchResult> {
-  if (apiSite.detail) {
-    return handleSpecialSourceDetail(id, apiSite);
-  }
-
   const detailUrl = `${apiSite.api}${API_CONFIG.detail.path}${id}`;
 
   const controller = new AbortController();
@@ -236,7 +235,7 @@ export async function getDetailFromApi(
   let episodes: string[] = [];
   let titles: string[] = [];
 
-  // 处理播放源拆分
+  // 处理视频数据拆分
   if (videoDetail.vod_play_url) {
     // 先用 $$$ 分割
     const vod_play_url_array = videoDetail.vod_play_url.split('$$$');
@@ -262,7 +261,7 @@ export async function getDetailFromApi(
     });
   }
 
-  // 如果播放源为空，则尝试从内容中解析 m3u8
+  // 如果视频数据为空，则尝试从内容中解析 m3u8
   if (episodes.length === 0 && videoDetail.vod_content) {
     const matches = videoDetail.vod_content.match(M3U8_PATTERN) || [];
     episodes = matches.map((link: string) => link.replace(/^\$/, ''));
@@ -284,6 +283,43 @@ export async function getDetailFromApi(
     type_name: videoDetail.type_name,
     douban_id: videoDetail.vod_douban_id,
   };
+}
+
+export async function getDetailFromApi(
+  apiSite: ApiSite,
+  id: string
+): Promise<SearchResult> {
+  // NovaTV 修复：优先用通用 JSON API 解析（与搜索同源、可靠），
+  // JSON 请求失败或解析不出播放地址时才 fallback 到 HTML 页面解析（handleSpecialSourceDetail）。
+  // 背景：部分源（如 dyttzy）HTML 详情页解析失败 → episodes 为空 →
+  // 从「收藏夹/继续观看」再次进入时无法播放（首次搜索能播、二次走 detail 报错）。
+  let jsonResult: SearchResult | null = null;
+  try {
+    jsonResult = await fetchDetailFromJson(apiSite, id);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[detail] JSON 详情解析失败，尝试 HTML 解析 (${apiSite.key}):`,
+      err
+    );
+  }
+
+  // JSON 解析出有效播放地址 → 直接返回
+  if (jsonResult && jsonResult.episodes && jsonResult.episodes.length > 0) {
+    return jsonResult;
+  }
+
+  // 配置带 detail 字段的源：fallback 到 HTML 页面解析（如 ffzy 等依赖 HTML 特判正则的源）
+  if (apiSite.detail) {
+    return handleSpecialSourceDetail(id, apiSite);
+  }
+
+  // 无 detail 字段且 JSON 解析为空：返回 JSON 结果（由调用方判断是否可用）
+  if (jsonResult) {
+    return jsonResult;
+  }
+
+  throw new Error('获取到的详情内容无效');
 }
 
 async function handleSpecialSourceDetail(

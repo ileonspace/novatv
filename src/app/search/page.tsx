@@ -41,7 +41,7 @@ function SearchPageClient() {
   const pendingResultsRef = useRef<SearchResult[]>([]);
   const flushTimerRef = useRef<number | null>(null);
   const [useFluidSearch, setUseFluidSearch] = useState(true);
-  // 聚合卡片 refs 与聚合统计缓存
+  // 合并卡片 refs 与合并统计缓存
   const groupRefs = useRef<Map<string, React.RefObject<VideoCardHandle>>>(new Map());
   const groupStatsRef = useRef<Map<string, { douban_id?: number; episodes?: number; source_names: string[] }>>(new Map());
 
@@ -87,7 +87,7 @@ function SearchPageClient() {
 
     return { episodes, source_names, douban_id };
   };
-  // 过滤器：非聚合与聚合
+  // 过滤器：非合并与合并
   const [filterAll, setFilterAll] = useState<{ source: string; title: string; year: string; yearOrder: 'none' | 'asc' | 'desc' }>({
     source: 'all',
     title: 'all',
@@ -101,7 +101,7 @@ function SearchPageClient() {
     yearOrder: 'none',
   });
 
-  // 获取默认聚合设置：只读取用户本地设置，默认为 true
+  // 获取默认合并设置：只读取用户本地设置，默认为 true
   const getDefaultAggregate = () => {
     if (typeof window !== 'undefined') {
       const userSetting = localStorage.getItem('defaultAggregateSearch');
@@ -109,7 +109,7 @@ function SearchPageClient() {
         return JSON.parse(userSetting);
       }
     }
-    return true; // 默认启用聚合
+    return true; // 默认启用合并
   };
 
   const [viewMode, setViewMode] = useState<'agg' | 'all'>(() => {
@@ -156,7 +156,7 @@ function SearchPageClient() {
     return order === 'asc' ? aNum - bNum : bNum - aNum;
   };
 
-  // 聚合后的结果（按标题和年份分组）
+  // 合并后的结果（按标题和年份分组）
   const aggregatedResults = useMemo(() => {
     const map = new Map<string, SearchResult[]>();
     const keyOrder: string[] = []; // 记录键出现的顺序
@@ -176,11 +176,11 @@ function SearchPageClient() {
       map.set(key, arr);
     });
 
-    // 按出现顺序返回聚合结果
+    // 按出现顺序返回合并结果
     return keyOrder.map(key => [key, map.get(key)!] as [string, SearchResult[]]);
   }, [searchResults]);
 
-  // 当聚合结果变化时，如果某个聚合已存在，则调用其卡片 ref 的 set 方法增量更新
+  // 当合并结果变化时，如果某个合并已存在，则调用其卡片 ref 的 set 方法增量更新
   useEffect(() => {
     aggregatedResults.forEach(([mapKey, group]) => {
       const stats = computeGroupStats(group);
@@ -262,7 +262,7 @@ function SearchPageClient() {
     return { categoriesAll, categoriesAgg };
   }, [searchResults]);
 
-  // 非聚合：应用筛选与排序
+  // 非合并：应用筛选与排序
   const filteredAllResults = useMemo(() => {
     const { source, title, year, yearOrder } = filterAll;
     const filtered = searchResults.filter((item) => {
@@ -296,7 +296,7 @@ function SearchPageClient() {
     });
   }, [searchResults, filterAll, searchQuery]);
 
-  // 聚合：应用筛选与排序
+  // 合并：应用筛选与排序
   const filteredAggResults = useMemo(() => {
     const { source, title, year, yearOrder } = filterAgg as any;
     const filtered = aggregatedResults.filter(([_, group]) => {
@@ -718,7 +718,7 @@ function SearchPageClient() {
                   )}
                 </h2>
               </div>
-              {/* 筛选器 + 聚合开关 同行 */}
+              {/* 筛选器 + 合并开关 同行 */}
               <div className='mb-8 flex items-center justify-between gap-3'>
                 <div className='flex-1 min-w-0'>
                   {viewMode === 'agg' ? (
@@ -735,9 +735,9 @@ function SearchPageClient() {
                     />
                   )}
                 </div>
-                {/* 聚合开关 */}
+                {/* 合并显示开关 */}
                 <label className='flex items-center gap-2 cursor-pointer select-none shrink-0'>
-                  <span className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>聚合</span>
+                  <span className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>合并显示</span>
                   <div className='relative'>
                     <input
                       type='checkbox'

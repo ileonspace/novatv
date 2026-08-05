@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       case 'add':
         // 检查是否已存在相同的 key
         if (config.LiveConfig.some((l) => l.key === key)) {
-          return NextResponse.json({ error: '直播源 key 已存在' }, { status: 400 });
+          return NextResponse.json({ error: '直播数据 key 已存在' }, { status: 400 });
         }
 
         const liveInfo = {
@@ -58,24 +58,24 @@ export async function POST(request: NextRequest) {
           const nums = await refreshLiveChannels(liveInfo);
           liveInfo.channelNumber = nums;
         } catch (error) {
-          console.error('刷新直播源失败:', error);
+          console.error('刷新直播数据失败:', error);
           liveInfo.channelNumber = 0;
         }
 
-        // 添加新的直播源
+        // 添加新的直播数据
         config.LiveConfig.push(liveInfo);
         break;
 
       case 'delete':
-        // 删除直播源
+        // 删除直播数据
         const deleteIndex = config.LiveConfig.findIndex((l) => l.key === key);
         if (deleteIndex === -1) {
-          return NextResponse.json({ error: '直播源不存在' }, { status: 404 });
+          return NextResponse.json({ error: '直播数据不存在' }, { status: 404 });
         }
 
         const liveSource = config.LiveConfig[deleteIndex];
         if (liveSource.from === 'config') {
-          return NextResponse.json({ error: '不能删除配置文件中的直播源' }, { status: 400 });
+          return NextResponse.json({ error: '不能删除配置文件中的直播数据' }, { status: 400 });
         }
 
         deleteCachedLiveChannels(key);
@@ -84,33 +84,33 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'enable':
-        // 启用直播源
+        // 启用直播数据
         const enableSource = config.LiveConfig.find((l) => l.key === key);
         if (!enableSource) {
-          return NextResponse.json({ error: '直播源不存在' }, { status: 404 });
+          return NextResponse.json({ error: '直播数据不存在' }, { status: 404 });
         }
         enableSource.disabled = false;
         break;
 
       case 'disable':
-        // 禁用直播源
+        // 禁用直播数据
         const disableSource = config.LiveConfig.find((l) => l.key === key);
         if (!disableSource) {
-          return NextResponse.json({ error: '直播源不存在' }, { status: 404 });
+          return NextResponse.json({ error: '直播数据不存在' }, { status: 404 });
         }
         disableSource.disabled = true;
         break;
 
       case 'edit':
-        // 编辑直播源
+        // 编辑直播数据
         const editSource = config.LiveConfig.find((l) => l.key === key);
         if (!editSource) {
-          return NextResponse.json({ error: '直播源不存在' }, { status: 404 });
+          return NextResponse.json({ error: '直播数据不存在' }, { status: 404 });
         }
 
-        // 配置文件中的直播源不允许编辑
+        // 配置文件中的直播数据不允许编辑
         if (editSource.from === 'config') {
-          return NextResponse.json({ error: '不能编辑配置文件中的直播源' }, { status: 400 });
+          return NextResponse.json({ error: '不能编辑配置文件中的直播数据' }, { status: 400 });
         }
 
         // 更新字段（除了 key 和 from）
@@ -124,13 +124,13 @@ export async function POST(request: NextRequest) {
           const nums = await refreshLiveChannels(editSource);
           editSource.channelNumber = nums;
         } catch (error) {
-          console.error('刷新直播源失败:', error);
+          console.error('刷新直播数据失败:', error);
           editSource.channelNumber = 0;
         }
         break;
 
       case 'sort':
-        // 排序直播源
+        // 排序直播数据
         const { order } = body;
         if (!Array.isArray(order)) {
           return NextResponse.json({ error: '排序数据格式错误' }, { status: 400 });
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        // 添加未在排序列表中的直播源（保持原有顺序）
+        // 添加未在排序列表中的直播数据（保持原有顺序）
         config.LiveConfig.forEach((source) => {
           if (!order.includes(source.key)) {
             sortedLiveConfig.push(source);

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 并发刷新所有启用的直播源
+    // 并发刷新所有启用的直播数据
     const refreshPromises = (config.LiveConfig || [])
       .filter(liveInfo => !liveInfo.disabled)
       .map(async (liveInfo) => {
@@ -44,10 +44,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: '直播源刷新成功',
+      message: '直播数据刷新成功',
     });
   } catch (error) {
-    console.error('直播源刷新失败:', error);
+    console.error('直播数据刷新失败:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : '刷新失败' },
       { status: 500 }

@@ -382,7 +382,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
       });
     }
 
-    // 聚合源信息 - 直接在菜单中展示，不需要单独的操作项
+    // 来源信息 - 直接在菜单中展示，不需要单独的操作项
 
     // 收藏/取消收藏操作
     if (config.showHeart && from !== 'douban' && actualSource && actualId) {
@@ -782,7 +782,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
             </a>
           )}
 
-          {/* 聚合播放源指示器 */}
+          {/* 多来源指示器 */}
           {isAggregate && dynamicSourceNames && dynamicSourceNames.length > 0 && (() => {
             const uniqueSources = Array.from(new Set(dynamicSourceNames));
             const sourceCount = uniqueSources.length;
@@ -823,12 +823,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                     {sourceCount}
                   </div>
 
-                  {/* 播放源详情悬浮框 */}
+                  {/* 视频数据详情悬浮框 */}
                   {(() => {
-                    // 优先显示的播放源（常见的主流平台）
+                    // 优先显示的视频数据（常见的主流平台）
                     const prioritySources = ['爱奇艺', '腾讯视频', '优酷', '芒果TV', '哔哩哔哩', 'Netflix', 'Disney+'];
 
-                    // 按优先级排序播放源
+                    // 按优先级排序视频数据
                     const sortedSources = uniqueSources.sort((a, b) => {
                       const aIndex = prioritySources.indexOf(a);
                       const bIndex = prioritySources.indexOf(b);
@@ -884,7 +884,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(function VideoCard
                           {hasMore && (
                             <div className='mt-1 sm:mt-2 pt-1 sm:pt-1.5 border-t border-gray-700/50'>
                               <div className='flex items-center justify-center text-gray-400'>
-                                <span className='text-[10px] sm:text-xs font-medium'>+{remainingCount} 播放源</span>
+                                <span className='text-[10px] sm:text-xs font-medium'>+{remainingCount} 视频数据</span>
                               </div>
                             </div>
                           )}

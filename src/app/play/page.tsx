@@ -44,6 +44,52 @@ interface WakeLockSentinel {
   removeEventListener(type: 'release', listener: () => void): void;
 }
 
+// ---------------------------------------------------------------------------
+// 换源列表过滤 —— 与原项目 LunaTV 保持一致
+// 原项目规则（LunaTV-main/src/app/play/page.tsx fetchSourcesData）：
+//   标题去空格+小写后【全等】、年份【全等】、类型校验（tv 需多集 / movie 需单集）
+// ---------------------------------------------------------------------------
+function filterSourcesByCurrentMovie(
+  results: SearchResult[],
+  baseTitle: string,
+  baseYear: string,
+  baseType: string,
+  currentKey?: string
+): SearchResult[] {
+  if (!results || results.length === 0) return results;
+  const normTitle = (baseTitle || '').replaceAll(' ', '').toLowerCase();
+  const normYear = (baseYear || '').toLowerCase();
+
+  const filtered = results.filter((result) => {
+    // 标题精确匹配（去空格 + 小写后全等）
+    const titleMatch =
+      (result.title || '').replaceAll(' ', '').toLowerCase() === normTitle;
+    // 年份精确匹配（基准年份存在时才校验）
+    const yearMatch = baseYear
+      ? (result.year || '').toLowerCase() === normYear
+      : true;
+    // 类型校验（tv 需多集，movie 需单集）
+    const typeMatch = baseType
+      ? (baseType === 'tv' && result.episodes.length > 1) ||
+        (baseType === 'movie' && result.episodes.length === 1)
+      : true;
+    return titleMatch && yearMatch && typeMatch;
+  });
+
+  // 始终保留当前正在播放的源（换源列表不能丢掉用户正在看的源）
+  if (currentKey) {
+    const current = results.find((s) => `${s.source}-${s.id}` === currentKey);
+    if (
+      current &&
+      !filtered.some((s) => `${s.source}-${s.id}` === currentKey)
+    ) {
+      filtered.unshift(current);
+    }
+  }
+
+  return filtered;
+}
+
 function PlayPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -55,7 +101,7 @@ function PlayPageClient() {
   const [loadingStage, setLoadingStage] = useState<
     'searching' | 'preferring' | 'fetching' | 'ready'
   >('searching');
-  const [loadingMessage, setLoadingMessage] = useState('正在搜索播放源...');
+  const [loadingMessage, setLoadingMessage] = useState('正在搜索视频数据...');
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<SearchResult | null>(null);
 
@@ -199,13 +245,13 @@ function PlayPageClient() {
   // 工具函数（Utils）
   // -----------------------------------------------------------------------------
 
-  // 播放源优选函数
+  // 视频数据优选函数
   const preferBestSource = async (
     sources: SearchResult[]
   ): Promise<SearchResult> => {
     if (sources.length === 1) return sources[0];
 
-    // 将播放源均分为两批，并发测速各批，避免一次性过多请求
+    // 将视频数据均分为两批，并发测速各批，避免一次性过多请求
     const batchSize = Math.ceil(sources.length / 2);
     const allResults: Array<{
       source: SearchResult;
@@ -219,7 +265,7 @@ function PlayPageClient() {
           try {
             // 检查是否有第一集的播放地址
             if (!source.episodes || source.episodes.length === 0) {
-              console.warn(`播放源 ${source.source_name} 没有可用的播放地址`);
+              console.warn(`视频数据 ${source.source_name} 没有可用的播放地址`);
               return null;
             }
 
@@ -271,7 +317,7 @@ function PlayPageClient() {
     setPrecomputedVideoInfo(newVideoInfoMap);
 
     if (successfulResults.length === 0) {
-      console.warn('所有播放源测速都失败，使用第一个播放源');
+      console.warn('所有视频数据测速都失败，使用第一个视频数据');
       return sources[0];
     }
 
@@ -311,10 +357,10 @@ function PlayPageClient() {
       ),
     }));
 
-    // 按综合评分排序，选择最佳播放源
+    // 按综合评分排序，选择最佳视频数据
     resultsWithScore.sort((a, b) => b.score - a.score);
 
-    console.log('播放源评分排序结果:');
+    console.log('视频数据评分排序结果:');
     resultsWithScore.forEach((result, index) => {
       console.log(
         `${index + 1}. ${result.source.source_name
@@ -326,7 +372,7 @@ function PlayPageClient() {
     return resultsWithScore[0].source;
   };
 
-  // 计算播放源综合评分
+  // 计算视频数据综合评分
   const calculateSourceScore = (
     testResult: {
       quality: string;
@@ -724,7 +770,7 @@ function PlayPageClient() {
       setLoadingMessage(
         currentSource && currentId
           ? '🎬 正在获取视频详情...'
-          : '🔍 正在搜索播放源...'
+          : '🔍 正在搜索视频数据...'
       );
 
       // 应用详情：设置数据并初始化播放器
@@ -777,10 +823,18 @@ function PlayPageClient() {
           searchTitle || videoTitle || detailRes[0].title;
         if (searchKeyword) {
           streamingSearch(searchKeyword, () => undefined).then((all) => {
-            if (all.length > 0) {
-              setAvailableSources(all);
+            // 与原项目 LunaTV 一致的换源过滤（标题/年份/类型精确匹配）
+            const filtered = filterSourcesByCurrentMovie(
+              all,
+              videoTitle || searchTitle || detailRes[0]?.title,
+              videoYear || detailRes[0]?.year,
+              searchType,
+              `${currentSource}-${currentId}`
+            );
+            if (filtered.length > 0) {
+              setAvailableSources(filtered);
               // 后台测速 + 优选最快源（不阻塞播放）
-              optimizeAndSortSources(all).then((best) => {
+              optimizeAndSortSources(filtered).then((best) => {
                 if (
                   best &&
                   (best.source !== currentSourceRef.current ||
@@ -800,10 +854,19 @@ function PlayPageClient() {
       }
 
       // 无明确源 → 流式搜索：第一个可用源立即播放，不等全部源
+      // 过滤基准：以当前影片标题/年份/类型为准（与原项目 LunaTV 一致）
+      const filterTitle = videoTitle || searchTitle;
+      const filterYear = videoYear;
+      const filterType = searchType;
       let applied = false;
       const onFirstPlayable = (batch: SearchResult[]) => {
         if (applied) return;
-        const playable = batch.find((s) => s.episodes.length > 0);
+        const playable = filterSourcesByCurrentMovie(
+          batch,
+          filterTitle,
+          filterYear,
+          filterType
+        ).find((s) => s.episodes.length > 0);
         if (playable) {
           applied = true;
           applyDetail(playable);
@@ -817,7 +880,12 @@ function PlayPageClient() {
 
       // 流式结束仍未播放 → 兜底取第一个可用源
       if (!applied) {
-        const playable = allSources.find((s) => s.episodes.length > 0);
+        const playable = filterSourcesByCurrentMovie(
+          allSources,
+          filterTitle,
+          filterYear,
+          filterType
+        ).find((s) => s.episodes.length > 0);
         if (!playable) {
           setError('未找到匹配结果');
           setLoading(false);
@@ -826,11 +894,17 @@ function PlayPageClient() {
         applyDetail(playable);
       }
 
-      // 更新换源列表
-      if (allSources.length > 0) {
-        setAvailableSources(allSources);
+      // 更新换源列表（与原项目 LunaTV 一致的精确匹配）
+      const filteredSources = filterSourcesByCurrentMovie(
+        allSources,
+        filterTitle,
+        filterYear,
+        filterType
+      );
+      if (filteredSources.length > 0) {
+        setAvailableSources(filteredSources);
         // 后台测速填充换源列表速度信息（不阻塞播放）
-        optimizeAndSortSources(allSources).then((best) => {
+        optimizeAndSortSources(filteredSources).then((best) => {
           // 测速后自动优选最快源（当前源未真正播放时切换）
           if (
             best &&
@@ -2051,7 +2125,7 @@ function PlayPageClient() {
                       <div className='space-y-2'>
                         <p className='text-xl font-semibold text-white animate-pulse'>
                           {videoLoadingStage === 'sourceChanging'
-                            ? '🔄 切换播放源...'
+                            ? '🔄 切换视频数据...'
                             : '🔄 视频加载中...'}
                         </p>
                       </div>

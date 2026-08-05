@@ -10,10 +10,10 @@ export async function GET(request: NextRequest) {
     const sourceKey = searchParams.get('source');
 
     if (!sourceKey) {
-      return NextResponse.json({ error: '缺少直播源参数' }, { status: 400 });
+      return NextResponse.json({ error: '缺少直播数据参数' }, { status: 400 });
     }
 
-    // NovaTV：前端导入的直播源（config 参数）优先
+    // NovaTV：前端导入的直播数据（config 参数）优先
     const configParam = searchParams.get('config');
     const livesOverride = configParam
       ? parseLivesFromConfig(configParam)

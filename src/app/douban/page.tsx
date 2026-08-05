@@ -450,8 +450,7 @@ function DoubanPageClient() {
 
     try {
       setLoading(true);
-      // 确保在加载初始数据时重置页面状态
-      setDoubanData([]);
+      // 确保在加载初始数据时重置页面状态（不清空已有数据，切换分类时图片位置/布局保持稳定，只替换图片内容）
       setCurrentPage(0);
       setHasMore(true);
       setIsLoadingMore(false);
@@ -784,14 +783,23 @@ function DoubanPageClient() {
         </div>
 
         {/* 内容展示区域 */}
-        <div className='max-w-[95%] mx-auto mt-8 overflow-visible'>
+        <div className='relative max-w-[95%] mx-auto mt-8 overflow-visible'>
           {/* 内容网格：已有数据直接显示（含缓存命中/切换时），无数据才显示骨架屏 */}
+          {/* 加载指示：覆盖层不占布局空间，切换分类时图片/页面位置完全不动 */}
+          {loading && doubanData.length > 0 && (
+            <div className='absolute top-0 left-0 right-0 flex justify-center z-10 pointer-events-none'>
+              <div className='flex items-center px-3 py-1 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-sm text-gray-500 dark:text-gray-400 shadow-sm'>
+                <div className='w-3.5 h-3.5 border-2 border-green-500 border-t-transparent rounded-full animate-spin mr-2'></div>
+                正在加载...
+              </div>
+            </div>
+          )}
           {(!selectorsReady || (loading && doubanData.length === 0))
-            ? // 显示骨架屏
+            ? // 首次进入（无数据）：显示骨架屏
             <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-12 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8 sm:gap-y-20'>
               {skeletonData.map((index) => <DoubanCardSkeleton key={index} />)}
             </div>
-            : // 显示实际数据
+            : // 显示数据（切换分类时不清空，布局/图片位置稳定，只替换图片内容）
             <VirtualGrid
               items={doubanData}
               className='grid-cols-3 gap-x-2 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8'

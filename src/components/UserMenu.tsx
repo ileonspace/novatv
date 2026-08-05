@@ -910,14 +910,14 @@ export const UserMenu: React.FC = () => {
             {/* 分割线 */}
             <div className='border-t border-gray-200 dark:border-gray-700'></div>
 
-            {/* 默认聚合搜索结果 */}
+            {/* 默认合并显示搜索结果 */}
             <div className='flex items-center justify-between'>
               <div>
                 <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                  默认聚合搜索结果
+                  默认合并显示搜索结果
                 </h4>
                 <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                  搜索时默认按标题和年份聚合显示结果
+                  搜索时默认按标题和年份合并显示结果
                 </p>
               </div>
               <label className='flex items-center cursor-pointer'>

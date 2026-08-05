@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
 
   const config = await getConfig();
-  // 优先前端导入的直播源（config），否则环境变量
+  // 优先前端导入的直播数据（config），否则环境变量
   const configParam = searchParams.get('config');
   const livesOverride = configParam ? parseLivesFromConfig(configParam) : undefined;
   const liveSource =
@@ -27,7 +27,8 @@ export async function GET(request: Request) {
   if (!liveSource) {
     return NextResponse.json({ error: 'Source not found' }, { status: 404 });
   }
-  const ua = liveSource.ua || 'AptvPlayer/1.4.10';
+  // 优先使用频道级 UA（前端播放时携带），其次源级 UA，最后默认值
+  const ua = searchParams.get('ua') || liveSource.ua || 'AptvPlayer/1.4.10';
 
   let response: Response | null = null;
   let responseUsed = false;
@@ -121,6 +122,16 @@ function rewriteM3U8Content(content: string, baseUrl: string, req: Request, allo
   const host = req.headers.get('host');
   const proxyBase = `${protocol}://${host}/api/proxy`;
 
+  // 透传直播数据参数（novatv-source/config/ua）：嵌套 m3u8 / TS 片段请求
+  // 也需要识别源与 UA，否则代理找不到源返回 404 → 播放失败
+  const reqUrl = new URL(req.url);
+  const passParams = new URLSearchParams();
+  ['novatv-source', 'config', 'ua'].forEach((k) => {
+    const v = reqUrl.searchParams.get(k);
+    if (v) passParams.set(k, v);
+  });
+  const passStr = passParams.toString();
+
   const lines = content.split('\n');
   const rewrittenLines: string[] = [];
 
@@ -130,19 +141,24 @@ function rewriteM3U8Content(content: string, baseUrl: string, req: Request, allo
     // 处理 TS 片段 URL 和其他媒体文件
     if (line && !line.startsWith('#')) {
       const resolvedUrl = resolveUrl(baseUrl, line);
-      const proxyUrl = allowCORS ? resolvedUrl : `${proxyBase}/segment?url=${encodeURIComponent(resolvedUrl)}`;
-      rewrittenLines.push(proxyUrl);
+      if (allowCORS) {
+        rewrittenLines.push(resolvedUrl);
+      } else {
+        rewrittenLines.push(
+          `${proxyBase}/segment?url=${encodeURIComponent(resolvedUrl)}${passStr ? `&${passStr}` : ''}`
+        );
+      }
       continue;
     }
 
     // 处理 EXT-X-MAP 标签中的 URI
     if (line.startsWith('#EXT-X-MAP:')) {
-      line = rewriteMapUri(line, baseUrl, proxyBase);
+      line = rewriteMapUri(line, baseUrl, proxyBase, passStr);
     }
 
     // 处理 EXT-X-KEY 标签中的 URI
     if (line.startsWith('#EXT-X-KEY:')) {
-      line = rewriteKeyUri(line, baseUrl, proxyBase);
+      line = rewriteKeyUri(line, baseUrl, proxyBase, passStr);
     }
 
     // 处理嵌套的 M3U8 文件 (EXT-X-STREAM-INF)
@@ -154,8 +170,9 @@ function rewriteM3U8Content(content: string, baseUrl: string, req: Request, allo
         const nextLine = lines[i].trim();
         if (nextLine && !nextLine.startsWith('#')) {
           const resolvedUrl = resolveUrl(baseUrl, nextLine);
-          const proxyUrl = `${proxyBase}/m3u8?url=${encodeURIComponent(resolvedUrl)}`;
-          rewrittenLines.push(proxyUrl);
+          rewrittenLines.push(
+            `${proxyBase}/m3u8?url=${encodeURIComponent(resolvedUrl)}${passStr ? `&${passStr}` : ''}`
+          );
         } else {
           rewrittenLines.push(nextLine);
         }
@@ -169,23 +186,23 @@ function rewriteM3U8Content(content: string, baseUrl: string, req: Request, allo
   return rewrittenLines.join('\n');
 }
 
-function rewriteMapUri(line: string, baseUrl: string, proxyBase: string) {
+function rewriteMapUri(line: string, baseUrl: string, proxyBase: string, passStr: string) {
   const uriMatch = line.match(/URI="([^"]+)"/);
   if (uriMatch) {
     const originalUri = uriMatch[1];
     const resolvedUrl = resolveUrl(baseUrl, originalUri);
-    const proxyUrl = `${proxyBase}/segment?url=${encodeURIComponent(resolvedUrl)}`;
+    const proxyUrl = `${proxyBase}/segment?url=${encodeURIComponent(resolvedUrl)}${passStr ? `&${passStr}` : ''}`;
     return line.replace(uriMatch[0], `URI="${proxyUrl}"`);
   }
   return line;
 }
 
-function rewriteKeyUri(line: string, baseUrl: string, proxyBase: string) {
+function rewriteKeyUri(line: string, baseUrl: string, proxyBase: string, passStr: string) {
   const uriMatch = line.match(/URI="([^"]+)"/);
   if (uriMatch) {
     const originalUri = uriMatch[1];
     const resolvedUrl = resolveUrl(baseUrl, originalUri);
-    const proxyUrl = `${proxyBase}/key?url=${encodeURIComponent(resolvedUrl)}`;
+    const proxyUrl = `${proxyBase}/key?url=${encodeURIComponent(resolvedUrl)}${passStr ? `&${passStr}` : ''}`;
     return line.replace(uriMatch[0], `URI="${proxyUrl}"`);
   }
   return line;

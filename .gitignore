@@ -45,3 +45,6 @@ src/lib/runtime.ts
 public/manifest.json
 # opennext build output
 .open-next/
+
+# deploy 部署副本（独立 git 仓库，不入主项目）
+deploy-Github/

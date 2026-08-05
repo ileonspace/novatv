@@ -2,7 +2,7 @@
 
 'use client';
 
-import { CheckCircle2, Database, Link2, Trash2, Tv, Upload, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Database, Link2, Trash2, Tv, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -28,6 +28,9 @@ export default function ConfigImporter({ isOpen, onClose }: ConfigImporterProps)
   const [current, setCurrent] = useState<LocalSiteConfig | null>(() =>
     getLocalConfig()
   );
+  // 视频数据 / 直播数据列表是否展开（默认折叠）
+  const [sourceListOpen, setSourceListOpen] = useState(false);
+  const [liveListOpen, setLiveListOpen] = useState(false);
   const [cacheStat, setCacheStat] = useState<{
     size: number;
     oldest: number;
@@ -52,17 +55,17 @@ export default function ConfigImporter({ isOpen, onClose }: ConfigImporterProps)
     setSuccess('');
     let config: LocalSiteConfig;
     try {
+      const existing = getLocalConfig() || {};
       if (mode === 'm3u') {
-        // m3u 直播源：每行一个 m3u 播放列表地址（一个地址含多个频道）
-        if (!input.trim()) throw new Error('请输入 m3u 直播源地址');
+        // 直播数据：每行一个播放列表地址（一个地址含多个频道）
+        if (!input.trim()) throw new Error('请输入直播数据地址');
         const lines = input
           .split('\n')
           .map((l) => l.trim())
           .filter(Boolean);
-        const existing = getLocalConfig() || {};
         const lives = { ...(existing.lives || {}) };
         lines.forEach((url, i) => {
-          lives[`live${i + 1}`] = { name: `直播源${i + 1}`, url };
+          lives[`live${i + 1}`] = { name: `直播数据${i + 1}`, url };
         });
         config = { ...existing, lives };
       } else if (mode === 'url') {
@@ -75,17 +78,39 @@ export default function ConfigImporter({ isOpen, onClose }: ConfigImporterProps)
         if (!input.trim()) throw new Error('请粘贴配置 JSON');
         config = JSON.parse(input);
       }
-      // 播放源或直播源至少有一个
+      // JSON / 订阅链接模式：合并到现有配置，避免覆盖掉已导入的视频数据/直播数据
+      if (mode !== 'm3u') {
+        // custom_category 是数组，按 query+type 去重合并
+        const seenCat = new Set<string>();
+        const custom_category = [
+          ...(existing.custom_category || []),
+          ...(config.custom_category || []),
+        ].filter((c) => {
+          const key = `${c.query}-${c.type}`;
+          if (seenCat.has(key)) return false;
+          seenCat.add(key);
+          return true;
+        });
+        config = {
+          ...existing,
+          ...config,
+          cache_time: config.cache_time ?? existing.cache_time,
+          api_site: { ...(existing.api_site || {}), ...(config.api_site || {}) },
+          lives: { ...(existing.lives || {}), ...(config.lives || {}) },
+          custom_category,
+        };
+      }
+      // 视频数据或直播数据至少有一个
       const apiKeys = config?.api_site ? Object.keys(config.api_site) : [];
       const liveKeys = config?.lives ? Object.keys(config.lives) : [];
       if (apiKeys.length === 0 && liveKeys.length === 0) {
-        throw new Error('配置中未找到有效的播放源或直播源');
+        throw new Error('配置中未找到有效的视频数据或直播数据');
       }
       saveLocalConfig(config);
       setCurrent(config);
       setSuccess(
-        `✅ 导入成功：${apiKeys.length} 个播放源${
-          liveKeys.length ? `、${liveKeys.length} 个直播源` : ''
+        `✅ 导入成功：${apiKeys.length} 个视频数据${
+          liveKeys.length ? `、${liveKeys.length} 个直播数据` : ''
         }`
       );
       setInput('');
@@ -104,9 +129,35 @@ export default function ConfigImporter({ isOpen, onClose }: ConfigImporterProps)
     setInput('');
   };
 
+  // 单独删除某个直播数据
+  const removeLiveKey = (key: string) => {
+    const cfg = getLocalConfig();
+    if (!cfg?.lives) return;
+    const lives = { ...cfg.lives };
+    delete lives[key];
+    saveLocalConfig({ ...cfg, lives });
+    setCurrent(getLocalConfig());
+  };
+
+  // 清空视频数据 / 直播数据（互不影响）
+  const clearSources = () => {
+    const cfg = getLocalConfig();
+    if (!cfg) return;
+    saveLocalConfig({ ...cfg, api_site: {} });
+    setCurrent(getLocalConfig());
+  };
+
+  const clearLives = () => {
+    const cfg = getLocalConfig();
+    if (!cfg) return;
+    saveLocalConfig({ ...cfg, lives: {} });
+    setCurrent(getLocalConfig());
+  };
+
   const sourceCount = current?.api_site
     ? Object.keys(current.api_site).length
     : 0;
+  const liveCount = current?.lives ? Object.keys(current.lives).length : 0;
 
   return createPortal(
     <div
@@ -164,7 +215,7 @@ export default function ConfigImporter({ isOpen, onClose }: ConfigImporterProps)
             }`}
           >
             <Tv className='w-3.5 h-3.5 inline mr-1' />
-            直播源 m3u
+            直播数据
           </button>
         </div>
 
@@ -176,7 +227,7 @@ export default function ConfigImporter({ isOpen, onClose }: ConfigImporterProps)
             placeholder={
               mode === 'json'
                 ? '粘贴配置 JSON，格式：{"api_site": {"key": {"name":"","api":""}}, "cache_time": 7200}'
-                : '每行一个 m3u 直播源地址（一个地址含多个频道）\n如：https://example.com/live.m3u'
+                : '每行一个播放列表地址（一个地址含多个频道）'
             }
             className='w-full h-32 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3 text-sm text-gray-900 dark:text-gray-100 font-mono resize-none focus:ring-2 focus:ring-green-500 focus:outline-none'
           />
@@ -200,14 +251,14 @@ export default function ConfigImporter({ isOpen, onClose }: ConfigImporterProps)
           </p>
         )}
 
-        {/* 当前配置预览 */}
+        {/* 当前配置预览（视频数据 / 直播数据分开管理，可单独删除） */}
         {current && (
-          <div className='mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'>
+          <div className='mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-3'>
             <div className='flex items-center justify-between'>
               <div className='flex items-center gap-2'>
                 <CheckCircle2 className='w-4 h-4 text-green-600 dark:text-green-400' />
                 <span className='text-sm text-gray-700 dark:text-gray-300'>
-                  当前配置：{sourceCount} 个播放源
+                  当前配置
                 </span>
               </div>
               <button
@@ -215,11 +266,92 @@ export default function ConfigImporter({ isOpen, onClose }: ConfigImporterProps)
                 className='flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 transition-colors'
               >
                 <Trash2 className='w-3 h-3' />
-                清除
+                清除全部
               </button>
             </div>
             {current.cache_time && (
-              <p className='mt-1 text-xs text-gray-400'>缓存时间：{current.cache_time}s</p>
+              <p className='text-xs text-gray-400'>缓存时间：{current.cache_time}s</p>
+            )}
+
+            {/* 视频数据区块（默认折叠） */}
+            <div>
+              <div className='flex items-center justify-between'>
+                <button
+                  onClick={() => setSourceListOpen(!sourceListOpen)}
+                  className='flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 transition-colors'
+                >
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      sourceListOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                  🎬 视频数据（{sourceCount}）
+                </button>
+                {sourceCount > 0 && (
+                  <button
+                    onClick={clearSources}
+                    className='text-xs text-gray-500 hover:text-red-500 transition-colors'
+                  >
+                    清空视频数据
+                  </button>
+                )}
+              </div>
+              {sourceListOpen && sourceCount > 0 && (
+                <div className='mt-1.5 space-y-1 max-h-28 overflow-y-auto'>
+                  {Object.entries(current.api_site || {}).map(([key, site]) => (
+                    <div
+                      key={key}
+                      className='flex items-center justify-between text-xs text-gray-600 dark:text-gray-300'
+                    >
+                      <span className='truncate'>{site.name || key}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 直播数据区块（默认折叠） */}
+            {liveCount > 0 && (
+              <div>
+                <div className='flex items-center justify-between'>
+                  <button
+                    onClick={() => setLiveListOpen(!liveListOpen)}
+                    className='flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 transition-colors'
+                  >
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        liveListOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                    📺 直播数据（{liveCount}）
+                  </button>
+                  <button
+                    onClick={clearLives}
+                    className='text-xs text-gray-500 hover:text-red-500 transition-colors'
+                  >
+                    清空直播数据
+                  </button>
+                </div>
+                {liveListOpen && (
+                  <div className='mt-1.5 space-y-1 max-h-28 overflow-y-auto'>
+                    {Object.entries(current.lives || {}).map(([key, live]) => (
+                      <div
+                        key={key}
+                        className='flex items-center justify-between text-xs text-gray-600 dark:text-gray-300'
+                      >
+                        <span className='truncate'>{live.name || key}</span>
+                        <button
+                          onClick={() => removeLiveKey(key)}
+                          className='flex-shrink-0 ml-2 text-gray-400 hover:text-red-500 transition-colors'
+                          title='删除此直播数据'
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

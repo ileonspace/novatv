@@ -17,7 +17,7 @@ const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'NovaTV';
 const manifestTemplate = {
   name: siteName,
   short_name: siteName,
-  description: '影视聚合',
+  description: 'NovaTV - 简洁高效的信息检索平台，服务端零数据存储',
   start_url: '/',
   scope: '/',
   display: 'standalone',

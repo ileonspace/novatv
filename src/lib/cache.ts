@@ -16,7 +16,7 @@ function vkey(key: string): string {
   return `${CACHE_VERSION}::${key}`;
 }
 
-// 默认缓存时长 24h（影视作品更新时间）
+// 默认缓存时长 24h（内容更新时间）
 const DEFAULT_TTL =
   Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 24 * 60 * 60 * 1000;
 

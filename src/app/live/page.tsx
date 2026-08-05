@@ -36,9 +36,11 @@ interface LiveChannel {
   logo: string;
   group: string;
   url: string;
+  /** 频道级 UA（源站要求特定 UA 时使用，来自 m3u 的 http-user-agent） */
+  ua?: string;
 }
 
-// 直播源接口
+// 直播数据接口
 interface LiveSource {
   key: string;
   name: string;
@@ -58,13 +60,13 @@ function LivePageClient() {
   const [loadingStage, setLoadingStage] = useState<
     'loading' | 'fetching' | 'ready'
   >('loading');
-  const [loadingMessage, setLoadingMessage] = useState('正在加载直播源...');
+  const [loadingMessage, setLoadingMessage] = useState('正在加载直播数据...');
   const [error, setError] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // 直播源相关
+  // 直播数据相关
   const [liveSources, setLiveSources] = useState<LiveSource[]>([]);
   const [currentSource, setCurrentSource] = useState<LiveSource | null>(null);
   const currentSourceRef = useRef<LiveSource | null>(null);
@@ -87,7 +89,7 @@ function LivePageClient() {
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [unsupportedType, setUnsupportedType] = useState<string | null>(null);
 
-  // 切换直播源状态
+  // 切换直播数据状态
   const [isSwitchingSource, setIsSwitchingSource] = useState(false);
 
   // 分组相关
@@ -236,55 +238,45 @@ function LivePageClient() {
   // 工具函数（Utils）
   // -----------------------------------------------------------------------------
 
-  // 获取直播源列表
+  // 获取直播数据列表
   const fetchLiveSources = async () => {
     try {
       setLoadingStage('fetching');
-      setLoadingMessage('正在获取直播源...');
+      setLoadingMessage('正在获取直播数据...');
 
-      // 获取直播源（优先前端导入的 config，否则环境变量）
+      // 获取直播数据（优先前端导入的 config，否则环境变量）
       const liveCfg = getConfigParam();
       const response = await fetch(
         `/api/live/sources${liveCfg ? `?config=${encodeURIComponent(liveCfg)}` : ''}`
       );
       if (!response.ok) {
-        throw new Error('获取直播源失败');
+        throw new Error('获取直播数据失败');
       }
 
       const result = await response.json();
       if (!result.success) {
-        throw new Error(result.error || '获取直播源失败');
+        throw new Error(result.error || '获取直播数据失败');
       }
 
       const sources = result.data;
       setLiveSources(sources);
 
-      if (sources.length > 0) {
-        // 默认选中第一个源
-        const firstSource = sources[0];
-        if (needLoadSource) {
-          const foundSource = sources.find((s: LiveSource) => s.key === needLoadSource);
-          if (foundSource) {
-            setCurrentSource(foundSource);
-            await fetchChannels(foundSource);
-          } else {
-            setCurrentSource(firstSource);
-            await fetchChannels(firstSource);
-          }
-        } else {
-          setCurrentSource(firstSource);
-          await fetchChannels(firstSource);
-        }
-      }
-
+      // 源列表就绪立即结束全页 loading（频道后台加载，不再等 EPG 卡 1 分钟）
       setLoadingStage('ready');
       setLoadingMessage('✨ 准备就绪...');
+      setLoading(false);
 
-      setTimeout(() => {
-        setLoading(false);
-      }, 1000);
+      if (sources.length > 0) {
+        // 默认选中第一个源（或 URL 指定的源），后台加载频道不阻塞
+        const firstSource = sources[0];
+        const targetSource = needLoadSource
+          ? sources.find((s: LiveSource) => s.key === needLoadSource) || firstSource
+          : firstSource;
+        setCurrentSource(targetSource);
+        fetchChannels(targetSource);
+      }
     } catch (err) {
-      console.error('获取直播源失败:', err);
+      console.error('获取直播数据失败:', err);
       // 不设置错误，而是显示空状态
       setLiveSources([]);
       setLoading(false);
@@ -327,7 +319,7 @@ function LivePageClient() {
         setGroupedChannels({});
         setFilteredChannels([]);
 
-        // 更新直播源的频道数为 0
+        // 更新直播数据的频道数为 0
         setLiveSources(prevSources =>
           prevSources.map(s =>
             s.key === source.key ? { ...s, channelNumber: 0 } : s
@@ -345,12 +337,13 @@ function LivePageClient() {
         name: channel.name,
         logo: channel.logo,
         group: channel.group || '其他',
-        url: channel.url
+        url: channel.url,
+        ua: channel.ua
       }));
 
       setCurrentChannels(channels);
 
-      // 更新直播源的频道数
+      // 更新直播数据的频道数
       setLiveSources(prevSources =>
         prevSources.map(s =>
           s.key === source.key ? { ...s, channelNumber: channels.length } : s
@@ -426,7 +419,7 @@ function LivePageClient() {
       setGroupedChannels({});
       setFilteredChannels([]);
 
-      // 更新直播源的频道数为 0
+      // 更新直播数据的频道数为 0
       setLiveSources(prevSources =>
         prevSources.map(s =>
           s.key === source.key ? { ...s, channelNumber: 0 } : s
@@ -437,7 +430,7 @@ function LivePageClient() {
     }
   };
 
-  // 切换直播源
+  // 切换直播数据
   const handleSourceChange = async (source: LiveSource) => {
     try {
       // 设置切换状态，锁住频道切换器
@@ -455,7 +448,7 @@ function LivePageClient() {
       setCurrentSource(source);
       await fetchChannels(source);
     } catch (err) {
-      console.error('切换直播源失败:', err);
+      console.error('切换直播数据失败:', err);
       // 不设置错误，保持当前状态
     } finally {
       // 切换完成，解锁频道切换器
@@ -467,7 +460,7 @@ function LivePageClient() {
 
   // 切换频道
   const handleChannelChange = async (channel: LiveChannel) => {
-    // 如果正在切换直播源，则禁用频道切换
+    // 如果正在切换直播数据，则禁用频道切换
     if (isSwitchingSource) return;
 
     // 首先销毁当前播放器
@@ -623,7 +616,7 @@ function LivePageClient() {
     }
   };
 
-  // 确保视频源正确设置
+  // 确保视频数据正确设置
   const ensureVideoSource = (video: HTMLVideoElement | null, url: string) => {
     if (!video || !url) return;
     const sources = Array.from(video.getElementsByTagName('source'));
@@ -646,7 +639,7 @@ function LivePageClient() {
 
   // 切换分组
   const handleGroupChange = (group: string) => {
-    // 如果正在切换直播源，则禁用分组切换
+    // 如果正在切换直播数据，则禁用分组切换
     if (isSwitchingSource) return;
 
     setSelectedGroup(group);
@@ -886,17 +879,25 @@ function LivePageClient() {
         cleanupPlayer();
       }
 
-      // precheck type
+      // precheck type（3s 超时 + 失败不阻断：按 m3u8 继续初始化播放器，避免黑屏）
       let type = 'm3u8';
-      const precheckUrl = `/api/live/precheck?url=${encodeURIComponent(videoUrl)}&novatv-source=${currentSourceRef.current?.key || ''}`;
-      const precheckResponse = await fetch(precheckUrl);
-      if (!precheckResponse.ok) {
-        console.error('预检查失败:', precheckResponse.statusText);
-        return;
-      }
-      const precheckResult = await precheckResponse.json();
-      if (precheckResult.success) {
-        type = precheckResult.type;
+      const precheckUrl = `/api/live/precheck?url=${encodeURIComponent(videoUrl)}&novatv-source=${currentSourceRef.current?.key || ''}&ua=${encodeURIComponent(currentChannel?.ua || '')}`;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const precheckResponse = await fetch(precheckUrl, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (precheckResponse.ok) {
+          const precheckResult = await precheckResponse.json();
+          if (precheckResult.success) {
+            type = precheckResult.type;
+          }
+        }
+      } catch (err) {
+        // precheck 失败/超时：不阻断，按 m3u8 继续
+        console.warn('precheck 跳过:', err);
       }
 
       // 如果不是 m3u8 类型，设置不支持的类型并返回
@@ -910,7 +911,7 @@ function LivePageClient() {
       setUnsupportedType(null);
 
       const customType = { m3u8: m3u8Loader };
-      const targetUrl = `/api/proxy/m3u8?url=${encodeURIComponent(videoUrl)}&novatv-source=${currentSourceRef.current?.key || ''}`;
+      const targetUrl = `/api/proxy/m3u8?url=${encodeURIComponent(videoUrl)}&novatv-source=${currentSourceRef.current?.key || ''}&ua=${encodeURIComponent(currentChannel?.ua || '')}`;
       try {
         // 创建新的播放器实例
         Artplayer.USE_RAF = false;
@@ -1348,7 +1349,7 @@ function LivePageClient() {
                       }
                     `.trim()}
                   >
-                    直播源
+                    直播数据
                   </div>
                 </div>
 
@@ -1361,7 +1362,7 @@ function LivePageClient() {
                       {isSwitchingSource && (
                         <div className='flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400'>
                           <div className='w-2 h-2 bg-amber-500 rounded-full animate-pulse'></div>
-                          切换直播源中...
+                          切换直播数据中...
                         </div>
                       )}
 
@@ -1475,7 +1476,7 @@ function LivePageClient() {
                             暂无可用频道
                           </p>
                           <p className='text-sm text-gray-400 dark:text-gray-500 mt-1'>
-                            请选择其他直播源或稍后再试
+                            请选择其他直播数据或稍后再试
                           </p>
                         </div>
                       )}
@@ -1483,7 +1484,7 @@ function LivePageClient() {
                   </>
                 )}
 
-                {/* 直播源 Tab 内容 */}
+                {/* 直播数据 Tab 内容 */}
                 {activeTab === 'sources' && (
                   <div className='flex flex-col h-full mt-4'>
                     <div className='flex-1 overflow-y-auto space-y-2 pb-20'>
@@ -1528,10 +1529,10 @@ function LivePageClient() {
                             <Radio className='w-8 h-8 text-gray-400 dark:text-gray-600' />
                           </div>
                           <p className='text-gray-500 dark:text-gray-400 font-medium'>
-                            暂无可用直播源
+                            暂无可用直播数据
                           </p>
                           <p className='text-sm text-gray-400 dark:text-gray-500 mt-1'>
-                            请检查网络连接或联系管理员添加直播源
+                            请检查网络连接或联系管理员添加直播数据
                           </p>
                         </div>
                       )}

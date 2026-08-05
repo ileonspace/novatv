@@ -234,10 +234,10 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('视频源管理操作失败:', error);
+    console.error('视频数据管理操作失败:', error);
     return NextResponse.json(
       {
-        error: '视频源管理操作失败',
+        error: '视频数据管理操作失败',
         details: (error as Error).message,
       },
       { status: 500 }
